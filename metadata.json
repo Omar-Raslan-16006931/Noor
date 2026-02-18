@@ -1,0 +1,8 @@
+{
+  "name": "Noor - Islamic Assistant",
+  "description": "A comprehensive spiritual assistant providing precise prayer times, Qibla direction, and AI-powered Islamic guidance.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}
