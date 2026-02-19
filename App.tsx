@@ -14,6 +14,7 @@ import { storageService } from './services/storage';
 import { AppTab, PrayerData } from './types';
 import { Loader2, AlertTriangle, Heart } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
+import { Analytics } from '@vercel/analytics/react';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -398,6 +399,7 @@ const App: React.FC = () => {
 
         <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
       </main>
+      <Analytics />
     </div>
   );
 };
