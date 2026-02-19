@@ -32,6 +32,7 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
 }) => {
   const [nextPrayer, setNextPrayer] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<string>('');
   // Initialize with fallback static content
   const [dailyWisdom, setDailyWisdom] = useState(TRUSTED_HADITHS[0]);
   const [featuredDua, setFeaturedDua] = useState(RAMADAN_DUAS[0]);
@@ -66,6 +67,8 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
 
     const calculateNextPrayer = () => {
       const now = new Date();
+      setCurrentTime(now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true }).replace('PM', 'م').replace('AM', 'ص'));
+
       const timings = data.timings;
       const prayerNames = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
       const arabicNames: Record<string, string> = {
@@ -215,7 +218,63 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
           <div className="bg-black/30 px-6 py-2 rounded-xl border border-white/10 backdrop-blur-md shadow-inner">
             <span className="text-3xl font-mono font-bold text-emerald-300 tracking-wider shadow-emerald-500/20 drop-shadow-sm">{timeLeft}</span>
           </div>
+          
+          <div className="flex items-center gap-1.5 mt-3 opacity-60 bg-black/20 px-3 py-1 rounded-full border border-white/5">
+              <span className="text-[10px] text-slate-400">الوقت الآن</span>
+              <span className="text-xs font-mono font-bold text-slate-200 dir-ltr">
+                  {currentTime}
+              </span>
+          </div>
         </div>
+      </div>
+
+      {/* Enhanced Quran Tracker Widget - Compact & Clickable - MOVED HERE */}
+      <div 
+        onClick={onOpenQuran}
+        className="bg-gradient-to-r from-emerald-900/40 to-slate-900/40 backdrop-blur-md rounded-2xl p-4 border border-white/5 relative overflow-hidden cursor-pointer hover:border-emerald-500/30 transition-all active:scale-[0.99] group"
+      >
+         {/* Background Decoration */}
+         <div className="absolute right-0 top-0 opacity-5 -translate-y-1/4 translate-x-1/4">
+             <BookOpen size={80} />
+         </div>
+         
+         {/* Hint Icon */}
+         <div className="absolute top-2 left-2 text-emerald-500/50 group-hover:text-emerald-400 transition-colors">
+            <Navigation size={12} className="-rotate-90" />
+         </div>
+
+         <div className="flex justify-between items-end relative z-10">
+            <div>
+                <h3 className="text-emerald-400 font-bold text-xs mb-1 flex items-center gap-1.5">
+                    <BookOpen size={14} />
+                    ختمة القرآن
+                </h3>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                    <span className="text-2xl font-bold text-white font-mono tracking-tighter">{quranProgress.currentPage}</span>
+                    <span className="text-[10px] text-slate-400 font-bold">/ 604</span>
+                </div>
+                <p className="text-[9px] text-slate-400 mt-0.5">
+                   {remainingPages > 0 ? `باقي ${remainingPages} صفحة` : 'ما شاء الله!'}
+                </p>
+            </div>
+
+            <div className="flex flex-col items-end gap-2">
+                 {/* Streak Badge */}
+                 <div className="flex items-center gap-1 bg-orange-500/10 px-1.5 py-0.5 rounded-md border border-orange-500/20">
+                     <Flame size={10} className="text-orange-500 fill-orange-500" />
+                     <span className="text-[9px] font-bold text-orange-200">{quranProgress.streak} يوم</span>
+                 </div>
+
+                 {/* Circular Progress */}
+                 <div className="relative w-10 h-10 flex items-center justify-center">
+                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#1e293b" strokeWidth="4" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" strokeWidth="4" strokeDasharray={`${quranPercentage}, 100`} className="drop-shadow-[0_0_2px_#10b981]" />
+                    </svg>
+                    <span className="absolute text-[9px] font-bold text-white">{quranPercentage}%</span>
+                 </div>
+            </div>
+         </div>
       </div>
 
       {/* Quick Access Grid */}
@@ -303,55 +362,6 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
                "{featuredDua.arabic}"
             </p>
             <p className="text-[9px] text-slate-400 mt-1 text-left">{featuredDua.source}</p>
-         </div>
-      </div>
-
-      {/* Enhanced Quran Tracker Widget - Compact & Clickable */}
-      <div 
-        onClick={onOpenQuran}
-        className="bg-gradient-to-r from-emerald-900/40 to-slate-900/40 backdrop-blur-md rounded-2xl p-4 border border-white/5 relative overflow-hidden cursor-pointer hover:border-emerald-500/30 transition-all active:scale-[0.99] group"
-      >
-         {/* Background Decoration */}
-         <div className="absolute right-0 top-0 opacity-5 -translate-y-1/4 translate-x-1/4">
-             <BookOpen size={80} />
-         </div>
-         
-         {/* Hint Icon */}
-         <div className="absolute top-2 left-2 text-emerald-500/50 group-hover:text-emerald-400 transition-colors">
-            <Navigation size={12} className="-rotate-90" />
-         </div>
-
-         <div className="flex justify-between items-end relative z-10">
-            <div>
-                <h3 className="text-emerald-400 font-bold text-xs mb-1 flex items-center gap-1.5">
-                    <BookOpen size={14} />
-                    ختمة القرآن
-                </h3>
-                <div className="flex items-baseline gap-1.5 mt-1">
-                    <span className="text-2xl font-bold text-white font-mono tracking-tighter">{quranProgress.currentPage}</span>
-                    <span className="text-[10px] text-slate-400 font-bold">/ 604</span>
-                </div>
-                <p className="text-[9px] text-slate-400 mt-0.5">
-                   {remainingPages > 0 ? `باقي ${remainingPages} صفحة` : 'ما شاء الله!'}
-                </p>
-            </div>
-
-            <div className="flex flex-col items-end gap-2">
-                 {/* Streak Badge */}
-                 <div className="flex items-center gap-1 bg-orange-500/10 px-1.5 py-0.5 rounded-md border border-orange-500/20">
-                     <Flame size={10} className="text-orange-500 fill-orange-500" />
-                     <span className="text-[9px] font-bold text-orange-200">{quranProgress.streak} يوم</span>
-                 </div>
-
-                 {/* Circular Progress */}
-                 <div className="relative w-10 h-10 flex items-center justify-center">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#1e293b" strokeWidth="4" />
-                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" strokeWidth="4" strokeDasharray={`${quranPercentage}, 100`} className="drop-shadow-[0_0_2px_#10b981]" />
-                    </svg>
-                    <span className="absolute text-[9px] font-bold text-white">{quranPercentage}%</span>
-                 </div>
-            </div>
          </div>
       </div>
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { supabase } from '../lib/supabaseClient';
 import { QuranProgress } from '../types';
-import { BookOpen, ChevronRight, ChevronLeft, Eye, Star, Flame, Trophy, Bookmark, Share2 } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, Eye, Star, Flame, Trophy, Bookmark, Share2, ArrowRight } from 'lucide-react';
 import { QuranReader } from './QuranReader';
 import { CompletionModal } from './CompletionModal';
 import { ShareModal } from './ShareModal';
@@ -154,28 +154,42 @@ export const QuranTracker: React.FC = () => {
            </div>
 
            <div className="flex items-center justify-center gap-4">
+             {/* Previous Button (Decrements Page - Swapped logic) */}
              <button 
                onClick={() => updatePage(progress.currentPage - 1)}
-               className="p-3 bg-white/5 rounded-full hover:bg-white/10 active:scale-95 transition-colors border border-white/5"
+               className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 active:scale-95 transition-colors border border-white/5"
              >
-               <ChevronRight size={20} className="text-slate-300" />
+               <ChevronRight size={24} className="text-slate-300" />
              </button>
              
+             {/* Main CTA - Continue Reading */}
              <button 
                onClick={() => setIsReading(true)}
-               className="w-32 py-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all group flex flex-col items-center justify-center gap-1 shadow-lg backdrop-blur-sm"
+               className="flex-1 max-w-[220px] h-14 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-2xl text-white shadow-lg shadow-emerald-900/40 hover:shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all group flex items-center justify-center gap-3 relative overflow-hidden border border-emerald-400/20"
              >
-               <div className="flex flex-col items-center leading-none">
-                 <span className="text-[10px] text-emerald-500/70 group-hover:text-white/70 mb-1">PAGE</span>
-                 <span className="text-4xl font-bold font-mono tracking-tighter">{progress.currentPage}</span>
-               </div>
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                
+                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <BookOpen size={16} className="fill-white/20 text-white" />
+                </div>
+                <div className="flex flex-col items-start leading-none gap-1 overflow-hidden">
+                    <span className="text-sm font-bold truncate w-full text-right">
+                       {currentSurahInfo ? `سورة ${currentSurahInfo.name}` : 'متابعة القراءة'}
+                    </span>
+                    <span className="text-[10px] opacity-80 font-mono truncate w-full text-right">
+                       جزء {currentJuz} • ص {progress.currentPage}
+                    </span>
+                </div>
+                <ArrowRight size={16} className="text-white/70 mr-auto rotate-180" />
              </button>
 
+             {/* Next Button (Increments Page - Swapped logic) */}
              <button 
                onClick={() => updatePage(progress.currentPage + 1)}
-               className="p-3 bg-emerald-600 rounded-full hover:bg-emerald-500 active:scale-95 shadow-lg shadow-emerald-900/50 transition-colors"
+               className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-full hover:bg-white/10 active:scale-95 transition-colors border border-white/5"
              >
-               <ChevronLeft size={20} className="text-white" />
+               <ChevronLeft size={24} className="text-slate-300" />
              </button>
            </div>
          </div>
@@ -193,13 +207,13 @@ export const QuranTracker: React.FC = () => {
       </div>
 
       {/* Duaa of the Day */}
-      <div className="rounded-3xl p-6 border border-amber-500/20 relative group overflow-hidden bg-gradient-to-r from-amber-900/10 to-transparent">
+      <div className="rounded-3xl p-6 border border-amber-500/20 relative group overflow-hidden bg-gradient-to-r from-amber-900/20 to-transparent shadow-lg shadow-amber-900/5">
          <div className="flex justify-between items-start mb-2 relative z-10">
             <div className="flex-1"></div>
-            <h3 className="text-amber-400 text-xs font-bold flex items-center justify-center gap-2 uppercase tracking-widest absolute inset-x-0 top-1">
-                <Star size={12} className="fill-amber-400" />
+            <h3 className="text-amber-300 text-xs font-bold flex items-center justify-center gap-2 uppercase tracking-widest absolute inset-x-0 top-1 shadow-black/50 drop-shadow-md">
+                <Star size={12} className="fill-amber-300" />
                 دعاء اليوم
-                <Star size={12} className="fill-amber-400" />
+                <Star size={12} className="fill-amber-300" />
             </h3>
             <button 
                 onClick={() => setShareItem({ ...dailyDua, category: 'دعاء اليوم' })}
@@ -209,10 +223,10 @@ export const QuranTracker: React.FC = () => {
             </button>
          </div>
 
-         <p className="text-xl text-white font-quran leading-[2.2] text-center mb-3 relative z-10 mt-4">
+         <p className="text-xl text-white font-quran leading-[2.2] text-center mb-3 relative z-10 mt-4 drop-shadow-md">
             "{dailyDua.arabic}"
          </p>
-         <div className="text-center text-slate-500 text-xs relative z-10 font-quran opacity-70">
+         <div className="text-center text-amber-100/80 text-xs relative z-10 font-quran mt-2 font-bold drop-shadow-sm">
             {dailyDua.source}
          </div>
       </div>

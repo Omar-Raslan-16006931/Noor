@@ -184,7 +184,7 @@ export const SURAH_NAMES: Surah[] = [
   { number: 51, name: "الذاريات", englishName: "Ad-Dhariyat", numberOfAyahs: 60, revelationType: "Meccan", startPage: 520 },
   { number: 52, name: "الطور", englishName: "At-Tur", numberOfAyahs: 49, revelationType: "Meccan", startPage: 523 },
   { number: 53, name: "النجم", englishName: "An-Najm", numberOfAyahs: 62, revelationType: "Meccan", startPage: 526 },
-  { number: 54, name: "المرسلات", englishName: "Al-Mursalat", numberOfAyahs: 50, revelationType: "Meccan", startPage: 580 },
+  { number: 54, name: "القمر", englishName: "Al-Qamar", numberOfAyahs: 55, revelationType: "Meccan", startPage: 528 },
   { number: 55, name: "الرحمن", englishName: "Ar-Rahman", numberOfAyahs: 78, revelationType: "Medinan", startPage: 531 },
   { number: 56, name: "الواقعة", englishName: "Al-Waqi'ah", numberOfAyahs: 96, revelationType: "Meccan", startPage: 534 },
   { number: 57, name: "الحديد", englishName: "Al-Hadid", numberOfAyahs: 29, revelationType: "Medinan", startPage: 537 },

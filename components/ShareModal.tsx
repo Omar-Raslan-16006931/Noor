@@ -65,7 +65,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         backgroundColor: '#020617',
         useCORS: true,
         logging: false,
-        // removed allowTaint: true as it blocks toBlob
       });
 
       canvas.toBlob(async (blob) => {
@@ -160,32 +159,32 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3"></div>
 
-                {/* Content Container */}
+                {/* Content Container - Vertically Distributed with proper padding */}
                 <div className="relative z-10 w-full h-full flex flex-col justify-between p-16 items-center">
                     
                     {/* Header Section */}
-                    <div className="flex flex-col items-center pt-8 w-full">
-                        <div className="w-16 h-16 rounded-full border border-emerald-500/30 flex items-center justify-center mb-6 bg-emerald-900/10 backdrop-blur-sm shadow-[0_0_30px_rgba(16,185,129,0.1)]">
-                            <div className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_15px_currentColor]"></div>
+                    <div className="flex flex-col items-center pt-4 w-full shrink-0">
+                        <div className="w-16 h-16 rounded-full border border-emerald-500/30 flex items-center justify-center mb-4 bg-emerald-900/10 backdrop-blur-sm shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+                            <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full shadow-[0_0_15px_currentColor]"></div>
                         </div>
-                        <h1 className="text-4xl font-serif font-bold tracking-[0.2em] text-white mb-2 text-center">NOOR</h1>
-                        <p className="text-sm text-emerald-400 tracking-[0.4em] uppercase font-light text-center opacity-80">Islamic Assistant</p>
+                        <h1 className="text-4xl font-serif font-bold tracking-[0.2em] text-white mb-1 text-center">NOOR</h1>
+                        <p className="text-xs text-emerald-400 tracking-[0.4em] uppercase font-light text-center opacity-80">Islamic Assistant</p>
                     </div>
 
-                    {/* Main Text Section */}
-                    <div className="flex-1 flex flex-col items-center justify-center gap-10 w-full max-w-4xl">
+                    {/* Main Text Section - Centered */}
+                    <div className="flex-1 flex flex-col items-center justify-center gap-10 w-full max-w-5xl px-4">
                         {/* Category Pill */}
-                        <div className="bg-white/5 border border-white/10 px-6 py-2 rounded-full backdrop-blur-md">
+                        <div className="bg-white/5 border border-white/10 px-8 py-2.5 rounded-full backdrop-blur-md shrink-0">
                             <span className="text-xl font-bold text-emerald-300 tracking-widest uppercase text-center block">
                                 {displayCategory}
                             </span>
                         </div>
 
-                        {/* Quote Text */}
-                        <div className="relative w-full text-center px-8">
+                        {/* Quote Text Container */}
+                        <div className="relative w-full text-center px-6">
                             <Quote size={50} className="text-emerald-500/20 absolute -top-12 left-0" />
                             
-                            <p className={`font-quran font-bold text-white drop-shadow-2xl leading-[2.2] dir-rtl text-center ${
+                            <p className={`font-quran font-bold text-white drop-shadow-2xl leading-[2.0] dir-rtl text-center ${
                                 (displayText?.length || 0) > 200 ? 'text-5xl' : 
                                 (displayText?.length || 0) > 100 ? 'text-6xl' : 'text-7xl'
                             }`}>
@@ -196,14 +195,14 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                         </div>
                         
                         {item.translation && (
-                            <p className="text-2xl text-slate-300 font-serif italic text-center max-w-3xl opacity-90 leading-relaxed">
+                            <p className="text-2xl text-slate-300 font-serif italic text-center max-w-4xl opacity-90 leading-relaxed mt-2">
                                 {item.translation}
                             </p>
                         )}
                     </div>
 
-                    {/* Footer Section */}
-                    <div className="flex flex-col items-center pb-8 gap-5 w-full">
+                    {/* Footer Section - Fixed at bottom */}
+                    <div className="flex flex-col items-center pb-24 gap-6 w-full shrink-0 mt-8">
                         <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                         <div className="text-center">
                             {displayNarrator && (
@@ -211,7 +210,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                                     {displayNarrator}
                                 </p>
                             )}
-                            <p className="text-xl text-slate-400 font-serif italic opacity-70">
+                            {/* Source Text - Increased size and improved styling */}
+                            <p className="text-4xl text-slate-200 font-serif italic opacity-90 font-medium tracking-wide">
                                 {displaySource}
                             </p>
                         </div>

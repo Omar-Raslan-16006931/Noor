@@ -344,8 +344,9 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen w-full font-sans selection:bg-amber-500/30 overflow-x-hidden">
       <DynamicBackground 
+         fajrTime={prayerData?.timings.Fajr}
          sunriseTime={prayerData?.timings.Sunrise}
-         sunsetTime={prayerData?.timings.Sunset}
+         maghribTime={prayerData?.timings.Maghrib}
       />
 
       <main className="relative z-10 max-w-lg mx-auto min-h-screen flex flex-col">
@@ -381,12 +382,14 @@ const App: React.FC = () => {
           {renderContent()}
 
           {/* Global App Footer */}
-          <div className="mt-8 text-center opacity-40 pb-4">
-            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-500 mb-1" dir="ltr">
-               <span>Made for the Ummah</span>
-               <Heart size={10} className="fill-white text-white" />
+          <div className="mt-8 pb-4 flex justify-center">
+            <div className="bg-black/30 backdrop-blur-md border border-white/5 rounded-2xl px-6 py-3 shadow-lg">
+                <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-300 mb-1 font-medium" dir="ltr">
+                   <span>Made for the Ummah</span>
+                   <Heart size={10} className="fill-white text-white" />
+                </div>
+                <p className="text-[9px] text-slate-500 font-mono text-center">Noor App v1.4.0-beta</p>
             </div>
-            <p className="text-[9px] text-slate-500 font-mono">Noor App v1.4.0-beta</p>
           </div>
         </div>
 

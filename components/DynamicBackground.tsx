@@ -1,162 +1,164 @@
+
 import React, { useEffect, useState } from 'react';
 
 interface DynamicBackgroundProps {
-  sunriseTime?: string; // HH:MM format
-  sunsetTime?: string; // HH:MM format
+  fajrTime?: string; // HH:MM
+  sunriseTime?: string; // HH:MM
+  maghribTime?: string; // HH:MM
 }
 
 export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({ 
-  sunriseTime = "06:00", 
-  sunsetTime = "18:00" 
+  fajrTime = "05:00", 
+  sunriseTime = "06:30",
+  maghribTime = "18:00" 
 }) => {
-  const [phase, setPhase] = useState<'dawn' | 'day' | 'dusk' | 'night'>('day');
+  const [phase, setPhase] = useState<'sunrise' | 'day' | 'maghrib' | 'night'>('day');
+
+  // Define static gradients for each phase
+  const GRADIENTS = {
+    sunrise: 'bg-gradient-to-b from-slate-900 via-[#4c1d95] to-[#f97316]',
+    day: 'bg-gradient-to-b from-[#0f172a] via-[#0369a1] to-[#38bdf8]',
+    maghrib: 'bg-gradient-to-b from-[#172554] via-[#312e81] to-[#d97706]',
+    night: 'bg-gradient-to-b from-black via-slate-950 to-[#0f172a]',
+  };
 
   useEffect(() => {
     const calculatePhase = () => {
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-      // Default values if time is invalid
-      let srMinutes = 6 * 60;
-      let ssMinutes = 18 * 60;
+      // Parse Times to Minutes
+      const parseTime = (t: string) => {
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
+      };
 
-      if (sunriseTime && sunsetTime) {
-        const [srH, srM] = sunriseTime.split(':').map(Number);
-        const [ssH, ssM] = sunsetTime.split(':').map(Number);
-        if (!isNaN(srH)) srMinutes = srH * 60 + srM;
-        if (!isNaN(ssH)) ssMinutes = ssH * 60 + ssM;
-      }
+      const fMinutes = parseTime(fajrTime);
+      const sMinutes = parseTime(sunriseTime);
+      const mMinutes = parseTime(maghribTime);
 
-      if (currentMinutes >= srMinutes - 45 && currentMinutes < srMinutes + 45) {
-        setPhase('dawn');
-      } else if (currentMinutes >= srMinutes + 45 && currentMinutes < ssMinutes - 45) {
+      // Phase Windows
+      // 1. Maghrib: 20 mins before -> 45 mins after
+      const maghribStart = mMinutes - 20;
+      const maghribEnd = mMinutes + 45;
+
+      // 2. Sunrise: 20 mins before actual Sunrise -> 2 hours after
+      const sunriseStart = sMinutes - 20;
+      const sunriseEnd = sMinutes + 120;
+
+      // Logic with day boundary handling
+      // We assume standard day ordering since these are daily times
+      
+      if (currentMinutes >= maghribStart && currentMinutes < maghribEnd) {
+        setPhase('maghrib');
+      } 
+      else if (currentMinutes >= sunriseStart && currentMinutes < sunriseEnd) {
+        setPhase('sunrise');
+      } 
+      else if (currentMinutes >= sunriseEnd && currentMinutes < maghribStart) {
         setPhase('day');
-      } else if (currentMinutes >= ssMinutes - 45 && currentMinutes < ssMinutes + 45) {
-        setPhase('dusk');
-      } else {
+      } 
+      else {
         setPhase('night');
       }
     };
 
-    const interval = setInterval(calculatePhase, 60000);
+    // Run immediately and every minute
     calculatePhase();
+    const interval = setInterval(calculatePhase, 10000); // Check every 10s for responsiveness
     return () => clearInterval(interval);
-  }, [sunriseTime, sunsetTime]);
+  }, [fajrTime, sunriseTime, maghribTime]);
 
-  const getGradient = () => {
-    switch (phase) {
-      case 'dawn':
-        return 'bg-gradient-to-br from-indigo-900 via-purple-700 to-orange-400';
-      case 'day':
-        return 'bg-gradient-to-br from-sky-400 via-blue-500 to-emerald-400';
-      case 'dusk':
-        return 'bg-gradient-to-br from-slate-900 via-purple-900 to-amber-600';
-      case 'night':
-        return 'bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950';
-      default:
-        return 'bg-gradient-to-br from-slate-900 to-slate-800';
-    }
-  };
+  // Visual Configuration
+  const isMaghrib = phase === 'maghrib';
+  const isSunrise = phase === 'sunrise';
+  const isDay = phase === 'day';
+  const isNight = phase === 'night';
+  
+  // Sun/Moon Position
+  const sunTop = isDay ? '15%' : isSunrise ? '70%' : isMaghrib ? '75%' : '110%';
+  const sunLeft = isSunrise ? '20%' : isMaghrib ? '80%' : isDay ? '80%' : '50%';
+  
+  // Sun/Moon Color
+  const sunColor = isMaghrib 
+    ? 'bg-amber-500/80 shadow-[0_0_100px_rgba(245,158,11,0.6)]' // Sunset Orange
+    : isSunrise 
+      ? 'bg-orange-400/80 shadow-[0_0_80px_rgba(251,146,60,0.6)]' // Sunrise Peach
+      : 'bg-yellow-100/90 shadow-[0_0_120px_rgba(255,255,255,0.6)]'; // Day White/Yellow
 
   return (
-    <div className={`fixed inset-0 z-0 transition-all duration-[5000ms] ease-in-out ${getGradient()} overflow-hidden`}>
+    <div className="fixed inset-0 z-0 overflow-hidden bg-slate-900">
       <style>{`
-        @keyframes float-up {
-          0% { transform: translateY(100vh) scale(0); opacity: 0; }
-          20% { opacity: 0.6; transform: translateY(80vh) scale(1); }
-          80% { opacity: 0.6; transform: translateY(20vh) scale(1); }
-          100% { transform: translateY(-10vh) scale(0); opacity: 0; }
+        @keyframes float {
+          0%, 100% { transform: translateY(0) translateX(0); }
+          50% { transform: translateY(-20px) translateX(10px); }
         }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.1); }
+        @keyframes drift {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(100vw); }
         }
-        .particle {
-          position: absolute;
-          background: white;
-          border-radius: 50%;
-          opacity: 0;
+        @keyframes twinkle {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
         }
       `}</style>
 
-      {/* Pattern Overlay */}
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.07] mix-blend-overlay"></div>
+      {/* 1. Background Layers (Cross-fading) */}
+      {Object.entries(GRADIENTS).map(([key, gradientClass]) => (
+        <div 
+          key={key}
+          className={`absolute inset-0 transition-opacity duration-[5000ms] ease-in-out ${gradientClass} ${phase === key ? 'opacity-100' : 'opacity-0'}`}
+        />
+      ))}
+
+      {/* 2. Global Readability Overlay (Vignette) */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 pointer-events-none z-10"></div>
+
+      {/* 3. Texture Overlay */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay opacity-[0.05] pointer-events-none z-10"></div>
       
-      {/* Night/Dusk Stars */}
-      {(phase === 'night' || phase === 'dusk') && (
-        <div className="absolute inset-0 transition-opacity duration-1000">
-          <div className="stars opacity-50 absolute inset-0"></div>
-          {/* Extra random twinkling stars */}
-          {[...Array(30)].map((_, i) => (
+      {/* 4. Stars (Night & Maghrib) */}
+      <div className={`absolute inset-0 z-0 transition-opacity duration-[3000ms] ${isNight || isMaghrib ? 'opacity-100' : 'opacity-0'}`}>
+          {[...Array(40)].map((_, i) => (
              <div 
                key={`star-${i}`}
-               className="particle animate-pulse"
+               className="absolute rounded-full bg-white shadow-[0_0_2px_#fff]"
                style={{
-                 top: `${Math.random() * 100}%`,
+                 top: `${Math.random() * 60}%`, // Mostly top half
                  left: `${Math.random() * 100}%`,
                  width: `${Math.random() * 2 + 1}px`,
                  height: `${Math.random() * 2 + 1}px`,
-                 animationDuration: `${Math.random() * 3 + 2}s`,
-                 animationDelay: `${Math.random() * 5}s`,
-                 opacity: Math.random() * 0.5 + 0.2
+                 opacity: Math.random() * 0.7 + 0.3,
+                 animation: `twinkle ${Math.random() * 3 + 2}s infinite ease-in-out`,
+                 animationDelay: `${Math.random() * 2}s`
                }}
              ></div>
           ))}
-          {/* Moon Glow Hint (Top Right) */}
-          <div className="absolute top-10 right-10 w-32 h-32 bg-indigo-100 rounded-full blur-[80px] opacity-20"></div>
-        </div>
-      )}
-
-      {/* Day/Dawn Sun Rays */}
-      {(phase === 'day' || phase === 'dawn') && (
-         <div className="absolute inset-0 overflow-hidden transition-opacity duration-1000">
-            {/* Spinning Light Rays */}
-            <div className="absolute -top-[50%] -right-[50%] w-[200%] h-[200%] animate-[spin_120s_linear_infinite] opacity-[0.08] pointer-events-none">
-                {[0, 45, 90, 135].map((deg) => (
-                    <div 
-                        key={deg}
-                        className="absolute top-1/2 left-1/2 w-full h-40 bg-gradient-to-r from-transparent via-white to-transparent"
-                        style={{ transform: `translate(-50%, -50%) rotate(${deg}deg)` }}
-                    ></div>
-                ))}
-            </div>
-            {/* Sun Glow Hint (Top Right) */}
-            <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] opacity-40 ${phase === 'day' ? 'bg-yellow-200' : 'bg-orange-300'}`}></div>
-         </div>
-      )}
-
-      {/* Dynamic Ambient Orbs */}
-      <div className={`absolute -top-20 -left-20 w-[30rem] h-[30rem] rounded-full blur-[120px] mix-blend-screen transition-colors duration-[5000ms] ${
-          phase === 'day' ? 'bg-sky-300/30' : 
-          phase === 'dawn' ? 'bg-rose-400/30' : 
-          phase === 'dusk' ? 'bg-purple-600/30' : 
-          'bg-indigo-900/40'
-      }`}></div>
-
-      <div className={`absolute -bottom-20 -right-20 w-[35rem] h-[35rem] rounded-full blur-[120px] mix-blend-screen transition-colors duration-[5000ms] ${
-          phase === 'day' ? 'bg-emerald-300/20' : 
-          phase === 'dawn' ? 'bg-amber-400/20' : 
-          phase === 'dusk' ? 'bg-orange-600/20' : 
-          'bg-slate-800/40'
-      }`}></div>
-
-      {/* Floating Particles (Dust/Light motes) - Visible in all phases */}
-      <div className="absolute inset-0 pointer-events-none">
-          {[...Array(15)].map((_, i) => (
-             <div 
-               key={`mote-${i}`}
-               className="particle"
-               style={{
-                 left: `${Math.random() * 100}%`,
-                 width: `${Math.random() * 3 + 1}px`,
-                 height: `${Math.random() * 3 + 1}px`,
-                 animation: `float-up ${Math.random() * 15 + 20}s linear infinite`,
-                 animationDelay: `-${Math.random() * 20}s`,
-                 background: phase === 'night' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)'
-               }}
-             ></div>
-          ))}
+          {/* Moon for Night */}
+          <div className={`absolute top-12 right-8 w-24 h-24 rounded-full bg-slate-100 shadow-[0_0_50px_rgba(255,255,255,0.3)] opacity-90 transition-transform duration-[5000ms] ${isNight ? 'translate-y-0' : '-translate-y-40'}`}>
+                <div className="absolute w-full h-full rounded-full bg-slate-200 opacity-20" style={{ transform: 'translateX(-4px)' }}></div>
+          </div>
       </div>
+
+      {/* 5. Sun (Day, Sunrise, Maghrib) */}
+      <div 
+        className={`absolute w-32 h-32 rounded-full transition-all duration-[5000ms] ease-in-out blur-xl ${sunColor} ${isNight ? 'opacity-0' : 'opacity-100'}`}
+        style={{ 
+            top: sunTop, 
+            left: sunLeft,
+            transform: 'translate(-50%, -50%)'
+        }}
+      ></div>
+
+      {/* 6. Clouds (Drifting) */}
+      <div className={`absolute inset-0 pointer-events-none transition-opacity duration-[5000ms] ${!isNight ? 'opacity-40' : 'opacity-0'}`}>
+          <div className="absolute top-[10%] w-64 h-12 bg-white/20 rounded-full blur-2xl animate-[drift_60s_linear_infinite]"></div>
+          <div className="absolute top-[25%] w-96 h-16 bg-white/10 rounded-full blur-3xl animate-[drift_80s_linear_infinite_reverse]" style={{ animationDelay: '-10s' }}></div>
+      </div>
+
+      {/* 7. Ambient Atmosphere Glows */}
+      <div className={`absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t transition-opacity duration-[3000ms] from-orange-500/20 to-transparent blur-3xl ${isSunrise ? 'opacity-100' : 'opacity-0'}`}></div>
+      <div className={`absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t transition-opacity duration-[3000ms] from-amber-600/20 to-transparent blur-3xl ${isMaghrib ? 'opacity-100' : 'opacity-0'}`}></div>
     </div>
   );
 };

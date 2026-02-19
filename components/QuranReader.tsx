@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Loader2, ChevronLeft, ChevronRight, X, Maximize2, Minimize2, 
@@ -62,12 +61,12 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     localStorage.setItem('quran_night_mode', isNightMode.toString());
   }, [isNightMode]);
   
-  // Swipe State
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  // Swipe State (Using refs to avoid re-renders)
+  const touchStart = useRef<number | null>(null);
+  const touchEnd = useRef<number | null>(null);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Determine current Surah/Juz based on page
   const currentSurahStatic = getSurahInfoByPage(page);
@@ -245,13 +244,23 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
   // Swipe Handlers
   const minSwipeDistance = 50;
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    touchEnd.current = null;
+    if (e.targetTouches.length > 0) {
+      touchStart.current = e.targetTouches[0].clientX;
+    }
   };
-  const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (e.targetTouches.length > 0) {
+      touchEnd.current = e.targetTouches[0].clientX;
+    }
+  };
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
+    const start = touchStart.current;
+    const end = touchEnd.current;
+
+    if (typeof start !== 'number' || typeof end !== 'number') return;
+    
+    const distance = start - end;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
     
@@ -421,7 +430,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                            placeholder="ابحث عن سورة..."
                            value={searchQuery}
                            onChange={(e) => setSearchQuery(e.target.value)}
-                           className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-white text-sm focus:border-amber-500 focus:outline-none transition-colors dir-rtl"
+                           className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-white text-sm focus:border-amber-500 focus:outline-none transition-colors dir-ltr"
                         />
                      </div>
                   )}
