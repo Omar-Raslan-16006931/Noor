@@ -27,6 +27,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Reduced resolution for better mobile stability (720p instead of 1080p)
+  const EXPORT_WIDTH = 720;
+  const EXPORT_HEIGHT_PORTRAIT = 1280;
+  const EXPORT_HEIGHT_SQUARE = 720;
+
   useEffect(() => {
     if (!item || !containerRef.current) return;
 
@@ -35,14 +40,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       const containerWidth = containerRef.current.clientWidth;
       const containerHeight = containerRef.current.clientHeight;
       
-      // Target dimensions
-      const targetWidth = 1080;
-      const targetHeight = aspectRatio === '9:16' ? 1920 : 1080;
+      // Target dimensions for preview scaling
+      const targetWidth = EXPORT_WIDTH;
+      const targetHeight = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
       
-      const scaleX = (containerWidth - 48) / targetWidth;
-      const scaleY = (containerHeight - 48) / targetHeight;
+      const scaleX = (containerWidth - 32) / targetWidth;
+      const scaleY = (containerHeight - 32) / targetHeight;
       
-      setScale(Math.min(scaleX, scaleY, 0.45)); 
+      // Use a slightly smaller scale to ensure it fits well within the view
+      setScale(Math.min(scaleX, scaleY, 0.5)); 
     };
 
     updateScale();
@@ -59,15 +65,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
     let clone: HTMLElement | null = null;
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Small delay to allow UI to settle
+      await new Promise(resolve => setTimeout(resolve, 150));
 
-      const width = 1080;
-      const height = aspectRatio === '9:16' ? 1920 : 1080;
+      const width = EXPORT_WIDTH;
+      const height = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
 
       const original = printRef.current;
       clone = original.cloneNode(true) as HTMLElement;
 
-      // Setup clone for capture
+      // Setup clone for capture - Force specific dimensions and styling
       Object.assign(clone.style, {
         position: 'fixed',
         top: '0',
@@ -79,21 +86,28 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         borderRadius: '0',
         margin: '0',
         pointerEvents: 'none',
+        visibility: 'visible', 
+        display: 'flex'
       });
 
       document.body.appendChild(clone);
       
-      // Wait for DOM to settle
-      await new Promise(resolve => setTimeout(resolve, 250));
+      // Wait for DOM to settle and images/fonts to potentially load in the clone
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(clone, {
-        scale: 1, // Reduced scale to prevent memory crashes on mobile
-        backgroundColor: '#020617', // Explicit background
+        scale: 1.5, // Slight upscale for sharpness, since we lowered base resolution
+        backgroundColor: '#020617',
         useCORS: true,
         logging: false,
         width: width,
         height: height,
-        // allowTaint removed to prevent security errors with toBlob
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
+        allowTaint: false, // Security: Must be false to use toBlob
+        foreignObjectRendering: false // Disable to improve stability on iOS
       });
 
       if (clone && document.body.contains(clone)) {
@@ -101,7 +115,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         clone = null;
       }
 
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png', 1.0));
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
 
       if (!blob) throw new Error('Failed to generate image blob');
 
@@ -115,6 +129,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
         await navigator.share(shareData);
       } else {
+        // Fallback for desktop or non-supported browsers
         const link = document.createElement('a');
         link.download = 'noor-share.png';
         link.href = URL.createObjectURL(blob);
@@ -129,10 +144,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         document.body.removeChild(clone);
       }
       console.error("Share generation failed", err);
-      if ((err as Error).name !== 'AbortError') {
-         // Add more descriptive error if possible or keep generic
-         alert('حدث خطأ أثناء إنشاء الصورة. قد يكون الجهاز غير مدعوم أو الذاكرة ممتلئة.');
-      }
+      // More friendly error message
+      alert('نعتذر، حدث خطأ أثناء إنشاء الصورة. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsGenerating(false);
     }
@@ -143,12 +156,18 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const displaySource = item.source;
   const displayNarrator = item.narrator;
   
-  // Dynamic font sizing - INCREASED SIZES significantly
+  // Dynamic font sizing
   const getTextSizeClass = (text: string) => {
-      if (text.length > 250) return 'text-6xl leading-relaxed';
-      if (text.length > 120) return 'text-7xl leading-relaxed';
-      if (text.length > 60) return 'text-8xl leading-relaxed';
-      return 'text-9xl leading-[1.4]';
+      // Since resolution is lower (720px width), we adjust classes slightly or keep them large
+      // Tailwind text classes are relative to REM, so they scale with root font size usually.
+      // However, since we are hardcoding width/height in pixels for the clone, 
+      // we should ensure these classes look good at 720px width.
+      
+      // 720px is 66% of 1080px.
+      if (text.length > 250) return 'text-4xl leading-relaxed';
+      if (text.length > 120) return 'text-5xl leading-relaxed';
+      if (text.length > 60) return 'text-6xl leading-relaxed';
+      return 'text-7xl leading-[1.4]';
   };
 
   return (
@@ -164,122 +183,122 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
        <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0 w-full bg-slate-950/50 rounded-3xl border border-white/5">
          <div 
            style={{ 
-             width: 1080,
-             height: aspectRatio === '9:16' ? 1920 : 1080,
+             width: EXPORT_WIDTH,
+             height: aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE,
              transform: `scale(${scale})`,
              transformOrigin: 'center center',
            }}
-           className="shadow-2xl flex-shrink-0 origin-center"
+           className="shadow-2xl flex-shrink-0 origin-center select-none"
          >
             <div 
                ref={printRef}
-               className="w-full h-full flex flex-col relative overflow-hidden text-white"
-               style={{ 
-                  background: 'linear-gradient(135deg, #020617 0%, #0f172a 100%)'
-               }}
+               className="w-full h-full flex flex-col relative overflow-hidden text-white bg-slate-950"
             >
                 {/* --- Background Effects --- */}
+                {/* Gradient Background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
+
                 {/* Pattern */}
-                <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
                 
                 {/* Central Glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
 
                 {/* Inner Decorative Frame */}
-                <div className="absolute inset-6 border border-white/10 rounded-[48px] pointer-events-none z-0"></div>
-                <div className="absolute inset-8 border border-emerald-500/10 rounded-[40px] pointer-events-none z-0"></div>
+                <div className="absolute inset-5 border border-white/10 rounded-[40px] pointer-events-none z-0"></div>
+                <div className="absolute inset-7 border border-emerald-500/10 rounded-[32px] pointer-events-none z-0"></div>
 
                 {/* Corner Ornaments */}
-                <div className="absolute top-8 left-8 w-32 h-32 pointer-events-none opacity-40">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1">
+                <div className="absolute top-8 left-8 w-24 h-24 pointer-events-none opacity-40">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
                         <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
                     </svg>
                 </div>
-                <div className="absolute top-8 right-8 w-32 h-32 pointer-events-none opacity-40 rotate-90">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1">
+                <div className="absolute top-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-90">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
                         <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
                     </svg>
                 </div>
-                <div className="absolute bottom-8 right-8 w-32 h-32 pointer-events-none opacity-40 rotate-180">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1">
+                <div className="absolute bottom-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-180">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
                         <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
                     </svg>
                 </div>
-                <div className="absolute bottom-8 left-8 w-32 h-32 pointer-events-none opacity-40 -rotate-90">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1">
+                <div className="absolute bottom-8 left-8 w-24 h-24 pointer-events-none opacity-40 -rotate-90">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
                         <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
                     </svg>
                 </div>
 
                 {/* --- Content --- */}
-                <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-16">
+                <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-12">
                     
                     {/* Header - Large Category */}
-                    <div className="shrink-0 mt-8">
-                        <div className="flex items-center gap-4 px-10 py-4 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
-                            <Star size={28} className="fill-emerald-400 text-emerald-400" />
-                            <span className="text-3xl font-bold text-white tracking-[0.2em] uppercase font-serif">
+                    <div className="shrink-0 mt-6">
+                        <div className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-xl">
+                            <Star size={20} className="fill-emerald-400 text-emerald-400" />
+                            <span className="text-xl font-bold text-white tracking-[0.15em] uppercase font-serif">
                                 {displayCategory}
                             </span>
-                            <Star size={28} className="fill-emerald-400 text-emerald-400" />
+                            <Star size={20} className="fill-emerald-400 text-emerald-400" />
                         </div>
                     </div>
 
                     {/* Main Text Body */}
-                    <div className="flex-1 w-full max-w-5xl flex flex-col items-center justify-center relative">
+                    <div className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center relative">
                         
                         {/* Text Container with Bracket Quotes */}
-                        <div className="w-full relative py-12 px-8">
+                        <div className="w-full relative py-8 px-4">
                            {/* Right Up Quote */}
-                           <div className="absolute -top-12 -right-8 opacity-40">
-                               <Quote size={100} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
+                           <div className="absolute -top-8 -right-4 opacity-40">
+                               <Quote size={80} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
                            </div>
 
-                           <p className={`font-quran font-bold text-white text-center drop-shadow-2xl dir-rtl px-10 ${displayText ? getTextSizeClass(displayText) : ''}`}>
+                           <p className={`font-quran font-bold text-white text-center drop-shadow-2xl dir-rtl px-4 leading-[1.6] ${displayText ? getTextSizeClass(displayText) : ''}`}>
                                 {displayText}
                            </p>
                            
                            {/* Left Lower Quote */}
-                           <div className="absolute -bottom-12 -left-8 opacity-40">
-                               <Quote size={100} className="text-emerald-400 fill-emerald-400/10" />
+                           <div className="absolute -bottom-8 -left-4 opacity-40">
+                               <Quote size={80} className="text-emerald-400 fill-emerald-400/10" />
                            </div>
                         </div>
 
                         {item.translation && (
-                            <div className="mt-12 pt-6 border-t border-white/10 w-3/4 mx-auto">
-                                <p className="text-4xl text-slate-300 font-serif italic text-center opacity-80 leading-relaxed font-light">
+                            <div className="mt-8 pt-6 border-t border-white/10 w-4/5 mx-auto">
+                                <p className="text-2xl text-slate-300 font-serif italic text-center opacity-80 leading-relaxed font-light">
                                     "{item.translation}"
                                 </p>
                             </div>
                         )}
 
-                        {/* Source & Narrator - MOVED UP HERE and MADE LARGER */}
-                        <div className="text-center space-y-4 mt-16">
+                        {/* Source & Narrator */}
+                        <div className="text-center space-y-2 mt-10">
                              {displayNarrator && (
-                                <p className="text-5xl text-emerald-400 font-bold font-quran drop-shadow-lg mb-2">
+                                <p className="text-3xl text-emerald-400 font-bold font-quran drop-shadow-lg">
                                     {displayNarrator}
                                 </p>
                             )}
-                            <p className="text-4xl text-slate-300 font-serif uppercase tracking-widest font-bold opacity-80">
+                            <p className="text-2xl text-slate-300 font-serif uppercase tracking-widest font-bold opacity-80">
                                 {displaySource}
                             </p>
                         </div>
                     </div>
 
-                    {/* Footer Branding - SHRUNK SIGNIFICANTLY */}
-                    <div className="w-full shrink-0 flex items-center justify-between border-t border-white/5 pt-6 px-4 opacity-70">
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg border border-white/10 transform -rotate-3">
-                                 <Moon size={28} className="text-white fill-white/20" />
+                    {/* Footer Branding */}
+                    <div className="w-full shrink-0 flex items-center justify-between border-t border-white/5 pt-5 px-2 opacity-80">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg border border-white/10 transform -rotate-3">
+                                 <Moon size={20} className="text-white fill-white/20" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-4xl font-black text-white tracking-widest font-serif leading-none">NOOR</span>
-                                <span className="text-xs text-emerald-500 uppercase tracking-[0.5em] font-bold mt-1">App</span>
+                                <span className="text-2xl font-black text-white tracking-widest font-serif leading-none">NOOR</span>
+                                <span className="text-[10px] text-emerald-500 uppercase tracking-[0.4em] font-bold mt-0.5">App</span>
                             </div>
                         </div>
                         
                         <div>
-                            <span className="text-5xl font-black font-quran text-white drop-shadow-md leading-none opacity-80">نــور</span>
+                            <span className="text-4xl font-black font-quran text-white drop-shadow-md leading-none opacity-90">نــور</span>
                         </div>
                     </div>
                 </div>
