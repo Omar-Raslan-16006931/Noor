@@ -700,7 +700,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                     </span>
                     {!isCover && !isSelectionMode && (
                        <span className="text-[9px] text-slate-400 font-sans tracking-widest uppercase truncate">
-                           P{page} • J{currentJuz}
+                           جزء {currentJuz} • ص {page}
                        </span>
                     )}
                  </div>
