@@ -56,58 +56,99 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
     if (!printRef.current) return;
     setIsGenerating(true);
 
-    try {
-      // Force a repaint/wait for fonts
-      await new Promise(resolve => setTimeout(resolve, 300));
+    let clone: HTMLElement | null = null;
 
-      const canvas = await html2canvas(printRef.current, {
-        scale: 2, // High resolution for sharper text
-        backgroundColor: '#020617',
+    try {
+      // Force a repaint/wait for fonts and images to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const width = aspectRatio === '9:16' ? 1080 : 1200;
+      const height = aspectRatio === '9:16' ? 1920 : 900;
+
+      // Clone the element to render it off-screen at full size without transforms
+      // This fixes issues where html2canvas fails on scaled elements or calculates 0 dimensions for patterns
+      const original = printRef.current;
+      clone = original.cloneNode(true) as HTMLElement;
+
+      clone.style.position = 'fixed';
+      clone.style.top = '0';
+      clone.style.left = '0';
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.zIndex = '-9999';
+      clone.style.transform = 'none';
+      clone.style.borderRadius = '0'; 
+      // Ensure gradient background is preserved if it was set on the original via style
+      clone.style.background = original.style.background || '#020617';
+
+      document.body.appendChild(clone);
+      
+      // Allow DOM to settle
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const canvas = await html2canvas(clone, {
+        scale: 2, // High resolution
+        backgroundColor: '#020617', // Solid background to prevent transparency lines
         useCORS: true,
         logging: false,
+        width: width,
+        height: height,
+        alpha: false, // Disable alpha channel to prevent rendering artifacts
       });
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          throw new Error('Failed to generate image');
-        }
+      // Remove clone immediately after capture
+      if (clone && document.body.contains(clone)) {
+        document.body.removeChild(clone);
+        clone = null;
+      }
 
-        const file = new File([blob], 'noor-share.png', { type: 'image/png' });
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png', 1.0));
 
-        // Try Native Share
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              // Some browsers require text/title
-              title: 'Noor App', 
-              text: 'Shared from Noor' 
-            });
-            setIsGenerating(false);
-            return; // Success
-          } catch (e) {
-            console.warn('Native share failed or cancelled, falling back to download', e);
-          }
-        }
+      if (!blob) {
+        throw new Error('Failed to generate image blob');
+      }
 
-        // Fallback to Download
+      const file = new File([blob], 'noor-share.png', { type: 'image/png' });
+      const shareData = {
+        files: [file],
+        title: 'Noor App',
+        text: 'Shared from Noor' 
+      };
+
+      // Try Native Share
+      // Check if navigator.share exists and if it can share this data
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
         try {
-          const link = document.createElement('a');
-          link.download = 'noor-share.png';
-          link.href = canvas.toDataURL('image/png');
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        } catch (err) {
-          console.error('Download fallback failed', err);
+          await navigator.share(shareData);
+        } catch (shareError) {
+           if ((shareError as Error).name !== 'AbortError') {
+              console.warn('Share API failed, falling back to download', shareError);
+              throw shareError; // Trigger fallback in catch block if needed
+           }
         }
-        
-        setIsGenerating(false);
-      }, 'image/png', 1.0);
+      } else {
+        // Fallback to Download
+        const link = document.createElement('a');
+        link.download = 'noor-share.png';
+        link.href = URL.createObjectURL(blob);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }
 
     } catch (err) {
+      // Cleanup clone if error occurred before cleanup
+      if (clone && document.body.contains(clone)) {
+        document.body.removeChild(clone);
+      }
+
       console.error("Share generation failed", err);
-      alert('نعتذر، حدث خطأ أثناء إنشاء الصورة. يرجى المحاولة مرة أخرى.');
+      // Only alert if it wasn't a user cancellation
+      if ((err as Error).name !== 'AbortError') {
+         alert('نعتذر، حدث خطأ أثناء إنشاء الصورة. يرجى المحاولة مرة أخرى.');
+      }
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -145,10 +186,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                ref={printRef}
                className="w-full h-full bg-[#020617] text-white flex flex-col relative overflow-hidden"
                style={{ 
-                 backgroundImage: 'linear-gradient(135deg, #020617 0%, #064e3b 140%, #020617 200%)',
+                 // Simplified gradient to avoid glitchy lines in html2canvas
+                 background: 'linear-gradient(135deg, #020617 0%, #064e3b 100%)',
                }}
             >
-                {/* Background Elements - Safe CSS Pattern instead of external image */}
+                {/* Background Elements */}
                 <div 
                   className="absolute inset-0 opacity-[0.05]" 
                   style={{
@@ -159,7 +201,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                 <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/3"></div>
 
-                {/* Content Container - Vertically Distributed with proper padding */}
+                {/* Content Container */}
                 <div className="relative z-10 w-full h-full flex flex-col justify-between p-16 items-center">
                     
                     {/* Header Section */}
@@ -171,7 +213,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                         <p className="text-xs text-emerald-400 tracking-[0.4em] uppercase font-light text-center opacity-80">Islamic Assistant</p>
                     </div>
 
-                    {/* Main Text Section - Centered */}
+                    {/* Main Text Section */}
                     <div className="flex-1 flex flex-col items-center justify-center gap-10 w-full max-w-5xl px-4">
                         {/* Category Pill */}
                         <div className="bg-white/5 border border-white/10 px-8 py-2.5 rounded-full backdrop-blur-md shrink-0">
@@ -201,7 +243,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                         )}
                     </div>
 
-                    {/* Footer Section - Fixed at bottom */}
+                    {/* Footer Section */}
                     <div className="flex flex-col items-center pb-24 gap-6 w-full shrink-0 mt-8">
                         <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                         <div className="text-center">
@@ -210,7 +252,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                                     {displayNarrator}
                                 </p>
                             )}
-                            {/* Source Text - Increased size and improved styling */}
                             <p className="text-4xl text-slate-200 font-serif italic opacity-90 font-medium tracking-wide">
                                 {displaySource}
                             </p>

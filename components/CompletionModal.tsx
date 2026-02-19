@@ -18,14 +18,45 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
     if (!printRef.current) return;
     setIsGenerating(true);
 
+    let clone: HTMLElement | null = null;
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Wait for render
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait for render
       
-      const canvas = await html2canvas(printRef.current, {
+      // Define target high-res dimensions (1080px width, 4:5 aspect ratio)
+      const width = 1080;
+      const height = 1350;
+      
+      const original = printRef.current;
+      clone = original.cloneNode(true) as HTMLElement;
+      
+      clone.style.position = 'fixed';
+      clone.style.top = '0';
+      clone.style.left = '0';
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.zIndex = '-9999';
+      clone.style.transform = 'none';
+      clone.style.borderRadius = '0';
+      
+      document.body.appendChild(clone);
+      
+      // Wait for clone to render
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const canvas = await html2canvas(clone, {
         scale: 2,
         backgroundColor: '#020617',
         useCORS: true,
+        width: width,
+        height: height,
       });
+
+      // Cleanup
+      if (clone && document.body.contains(clone)) {
+        document.body.removeChild(clone);
+        clone = null;
+      }
 
       canvas.toBlob(async (blob) => {
         if (!blob) throw new Error('Blob generation failed');
@@ -48,6 +79,9 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
         setIsGenerating(false);
       }, 'image/png', 1.0);
     } catch (e) {
+      if (clone && document.body.contains(clone)) {
+        document.body.removeChild(clone);
+      }
       console.error(e);
       alert('Failed to share image');
       setIsGenerating(false);
