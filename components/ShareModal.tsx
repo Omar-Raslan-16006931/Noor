@@ -27,10 +27,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Reduced resolution for better mobile stability (720p instead of 1080p)
-  const EXPORT_WIDTH = 720;
-  const EXPORT_HEIGHT_PORTRAIT = 1280;
-  const EXPORT_HEIGHT_SQUARE = 720;
+  // High Quality Export (1080p)
+  const EXPORT_WIDTH = 1080;
+  const EXPORT_HEIGHT_PORTRAIT = 1920;
+  const EXPORT_HEIGHT_SQUARE = 1080;
 
   useEffect(() => {
     if (!item || !containerRef.current) return;
@@ -48,7 +48,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       const scaleY = (containerHeight - 32) / targetHeight;
       
       // Use a slightly smaller scale to ensure it fits well within the view
-      setScale(Math.min(scaleX, scaleY, 0.5)); 
+      setScale(Math.min(scaleX, scaleY, 0.45)); 
     };
 
     updateScale();
@@ -96,7 +96,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(clone, {
-        scale: 1.5, // Slight upscale for sharpness, since we lowered base resolution
+        scale: 1, // CRITICAL: Force 1:1 scale. Default uses devicePixelRatio (e.g. 3x on iPhone) which causes memory crash at 1080p.
         backgroundColor: '#020617',
         useCORS: true,
         logging: false,
@@ -156,18 +156,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const displaySource = item.source;
   const displayNarrator = item.narrator;
   
-  // Dynamic font sizing
+  // Dynamic font sizing - Updated for 1080p
   const getTextSizeClass = (text: string) => {
-      // Since resolution is lower (720px width), we adjust classes slightly or keep them large
-      // Tailwind text classes are relative to REM, so they scale with root font size usually.
-      // However, since we are hardcoding width/height in pixels for the clone, 
-      // we should ensure these classes look good at 720px width.
-      
-      // 720px is 66% of 1080px.
-      if (text.length > 250) return 'text-4xl leading-relaxed';
-      if (text.length > 120) return 'text-5xl leading-relaxed';
-      if (text.length > 60) return 'text-6xl leading-relaxed';
-      return 'text-7xl leading-[1.4]';
+      if (text.length > 250) return 'text-5xl leading-relaxed';
+      if (text.length > 120) return 'text-6xl leading-relaxed';
+      if (text.length > 60) return 'text-7xl leading-relaxed';
+      return 'text-8xl leading-[1.4]';
   };
 
   return (
@@ -199,7 +193,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                 <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
 
                 {/* Pattern */}
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
                 
                 {/* Central Glow */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
