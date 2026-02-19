@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Loader2, ChevronLeft, ChevronRight, X, Maximize2, Minimize2, 
@@ -258,7 +259,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     const start = touchStart.current;
     const end = touchEnd.current;
 
-    if (typeof start !== 'number' || typeof end !== 'number') return;
+    if (start === null || end === null) return;
     
     const distance = start - end;
     const isLeftSwipe = distance > minSwipeDistance;
