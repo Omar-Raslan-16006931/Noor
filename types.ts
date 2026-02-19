@@ -1,3 +1,4 @@
+
 export interface PrayerTimings {
   Fajr: string;
   Sunrise: string;
@@ -57,20 +58,40 @@ export interface QuranProgress {
   lastAyah?: number;
 }
 
-export interface Hadith {
+export interface UserData {
+  journal: JournalEntry[];
+  quran: QuranProgress;
+  settings: {
+    hijriAdjustment: number;
+    theme?: string;
+  };
+}
+
+export interface UserProfile {
   id: string;
-  text: string;
-  source: string; // e.g., "Sahih Al-Bukhari 614"
-  category: 'Fasting' | 'Prayer' | 'Charity' | 'Character' | 'General';
-  narrator: string;
+  username: string;
+  data: UserData;
+}
+
+export interface Hadith {
+  id: string | number;
+  text: string; // The Arabic text or English if Arabic missing
+  arabic?: string;
+  english?: string;
+  source: string; // e.g., "Sahih Al-Bukhari"
+  hadithNumber?: string;
+  narrator?: string;
+  chapter?: string;
+  bookSlug?: string;
 }
 
 export interface Dua {
   id: string;
-  category: 'Ramadan 1-10' | 'Ramadan 11-20' | 'Ramadan 21-30' | 'Quran' | 'Daily' | 'Forgiveness';
+  category: string;
   arabic: string;
   translation?: string;
   source: string;
+  reference?: string;
 }
 
 export interface Surah {
@@ -87,5 +108,6 @@ export enum AppTab {
   QURAN = 'QURAN',
   HADITH = 'HADITH',
   JOURNAL = 'JOURNAL',
-  QIBLA = 'QIBLA'
+  QIBLA = 'QIBLA',
+  SETTINGS = 'SETTINGS'
 }

@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Home, Compass, BookOpen, Scroll, PenTool } from 'lucide-react';
+import { Home, BookOpen, Scroll, Settings } from 'lucide-react';
 import { AppTab } from '../types';
 
 interface NavigationProps {
@@ -12,8 +13,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
     { id: AppTab.HOME, icon: Home, label: 'الرئيسية' },
     { id: AppTab.QURAN, icon: BookOpen, label: 'الختمة' },
     { id: AppTab.HADITH, icon: Scroll, label: 'الحديث' },
-    { id: AppTab.JOURNAL, icon: PenTool, label: 'خواطري' },
-    { id: AppTab.QIBLA, icon: Compass, label: 'القبلة' },
+    { id: AppTab.SETTINGS, icon: Settings, label: 'إعدادات' },
   ];
 
   return (
@@ -25,22 +25,22 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`flex flex-col items-center justify-center transition-all duration-300 w-12 ${
+              className={`flex flex-col items-center justify-center transition-all duration-300 w-14 ${
                 isActive ? '-translate-y-3' : 'text-slate-500'
               }`}
             >
               <div
-                className={`p-2 rounded-full transition-all duration-300 ${
+                className={`p-2.5 rounded-full transition-all duration-300 ${
                   isActive
                     ? 'bg-gradient-to-tr from-emerald-600 to-emerald-400 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] ring-2 ring-emerald-900 scale-105'
                     : 'hover:bg-slate-800'
                 }`}
               >
-                <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
               </div>
               <span
-                className={`text-[9px] mt-0.5 font-bold transition-all duration-300 ${
-                  isActive ? 'text-emerald-400 opacity-100 translate-y-0' : 'opacity-0 translate-y-2 h-0'
+                className={`text-[10px] mt-1 font-bold transition-all duration-300 ${
+                  isActive ? 'text-emerald-400 opacity-100 translate-y-0' : 'opacity-0 translate-y-2 h-0 overflow-hidden'
                 }`}
               >
                 {item.label}

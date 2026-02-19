@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Smartphone, Monitor, Share2, Loader2, Quote } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -185,8 +186,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                             <Quote size={50} className="text-emerald-500/20 absolute -top-12 left-0" />
                             
                             <p className={`font-quran font-bold text-white drop-shadow-2xl leading-[2.2] dir-rtl text-center ${
-                                (displayText?.length || 0) > 200 ? 'text-4xl' : 
-                                (displayText?.length || 0) > 100 ? 'text-5xl' : 'text-6xl'
+                                (displayText?.length || 0) > 200 ? 'text-5xl' : 
+                                (displayText?.length || 0) > 100 ? 'text-6xl' : 'text-7xl'
                             }`}>
                                 {displayText}
                             </p>

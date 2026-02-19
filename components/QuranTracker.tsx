@@ -1,19 +1,39 @@
+
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
+import { supabase } from '../lib/supabaseClient';
 import { QuranProgress } from '../types';
-import { BookOpen, ChevronRight, ChevronLeft, Eye, Star, Flame, Trophy } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, Eye, Star, Flame, Trophy, Bookmark, Share2 } from 'lucide-react';
 import { QuranReader } from './QuranReader';
-import { DUAS_LIBRARY } from '../data/staticContent';
+import { CompletionModal } from './CompletionModal';
+import { ShareModal } from './ShareModal';
+import { DUAS_LIBRARY, getSurahInfoByPage, getJuzInfoByPage } from '../data/staticContent';
 
 export const QuranTracker: React.FC = () => {
-  const [progress, setProgress] = useState<QuranProgress>(storageService.getQuranProgress());
+  const [progress, setProgress] = useState<QuranProgress>(storageService.getDefaultProgress());
   const [isReading, setIsReading] = useState(false);
   const [dailyDua, setDailyDua] = useState(DUAS_LIBRARY[0]);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [username, setUsername] = useState<string>('');
+  
+  // Share State
+  const [shareItem, setShareItem] = useState<any | null>(null);
+  
   const TOTAL_PAGES = 604;
-  const RAMADAN_DAYS = 30;
 
   useEffect(() => {
-    setProgress(storageService.getQuranProgress());
+    const loadData = async () => {
+      const data = await storageService.getQuranProgress();
+      setProgress(data);
+
+      // Fetch username
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+        if (profile) setUsername(profile.username);
+      }
+    };
+    loadData();
     
     // Select daily dua based on date
     const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
@@ -21,38 +41,59 @@ export const QuranTracker: React.FC = () => {
     setDailyDua(DUAS_LIBRARY[index]);
   }, []);
 
-  const updatePage = (newPage: number, surah?: number, ayah?: number) => {
-    if (newPage < 1 || newPage > TOTAL_PAGES) return;
+  const updatePage = async (newPage: number, surah?: number, ayah?: number) => {
+    if (newPage < 0 || newPage > TOTAL_PAGES) return;
     
-    const currentProgress = storageService.getQuranProgress();
+    // Check completion
+    if (newPage === 604 && progress.currentPage !== 604) {
+        setShowCompletionModal(true);
+    }
+
+    // Optimistic Update
+    const oldProgress = { ...progress };
     
+    // If surah is not provided (e.g. from page buttons), calculate it
+    const calculatedSurah = surah || getSurahInfoByPage(newPage)?.number;
+
     const updated = {
-      ...currentProgress,
+      ...progress,
       currentPage: newPage,
-      lastSurah: surah || currentProgress.lastSurah,
-      lastAyah: ayah || currentProgress.lastAyah,
+      lastSurah: calculatedSurah || progress.lastSurah,
+      lastAyah: ayah || progress.lastAyah,
     };
+    setProgress(updated);
     
-    const saved = storageService.saveQuranProgress(updated);
+    // Server Update
+    const saved = await storageService.saveQuranProgress(updated);
+    // If server returns different data (e.g. updated streak), sync it
     setProgress(saved);
   };
 
-  const updateGoal = (goal: number) => {
+  const updateGoal = async (goal: number) => {
     const updated = { ...progress, khatamGoal: goal };
-    localStorage.setItem('noor_quran_progress', JSON.stringify(updated));
     setProgress(updated);
+    await storageService.saveQuranProgress(updated);
   };
 
   const totalPagesGoal = TOTAL_PAGES * progress.khatamGoal;
   const percentage = Math.min(100, Math.round((progress.currentPage / totalPagesGoal) * 100));
-  const pagesPerDay = Math.ceil(TOTAL_PAGES / RAMADAN_DAYS) * progress.khatamGoal;
   const remainingPages = totalPagesGoal - progress.currentPage;
+  
+  // Contextual info for display
+  const currentSurahInfo = getSurahInfoByPage(progress.currentPage);
+  const currentJuz = getJuzInfoByPage(progress.currentPage);
 
   return (
     <div className="pb-24 pt-4 space-y-5 px-4">
+      <ShareModal item={shareItem} onClose={() => setShareItem(null)} />
+      
+      {showCompletionModal && (
+        <CompletionModal onClose={() => setShowCompletionModal(false)} username={username} />
+      )}
+
       {isReading && (
          <QuranReader 
-            page={progress.currentPage === 0 ? 1 : progress.currentPage} 
+            page={progress.currentPage} 
             onPageChange={updatePage} 
             onClose={() => setIsReading(false)} 
          />
@@ -97,7 +138,21 @@ export const QuranTracker: React.FC = () => {
          <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
          
          <div className="text-center mb-6 relative z-10">
-           <p className="text-slate-400 text-xs mb-4 font-bold tracking-wider uppercase">متابعة القراءة من الصفحة</p>
+           <p className="text-slate-400 text-xs mb-4 font-bold tracking-wider uppercase">متابعة القراءة</p>
+           
+           {/* Surah Context Display */}
+           <div className="flex items-center justify-center gap-2 mb-4 animate-in fade-in duration-500">
+             <div className="bg-emerald-500/10 px-3 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-2">
+               <Bookmark size={12} className="text-emerald-400" />
+               <span className="text-emerald-400 font-bold font-quran">{currentSurahInfo?.name || 'البداية'}</span>
+             </div>
+             {currentJuz > 0 && (
+               <div className="bg-white/5 px-3 py-1 rounded-lg border border-white/10">
+                 <span className="text-slate-300 text-xs">الجزء {currentJuz}</span>
+               </div>
+             )}
+           </div>
+
            <div className="flex items-center justify-center gap-4">
              <button 
                onClick={() => updatePage(progress.currentPage - 1)}
@@ -110,10 +165,9 @@ export const QuranTracker: React.FC = () => {
                onClick={() => setIsReading(true)}
                className="w-32 py-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all group flex flex-col items-center justify-center gap-1 shadow-lg backdrop-blur-sm"
              >
-               <span className="text-4xl font-bold font-mono tracking-tighter">{progress.currentPage}</span>
-               <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest opacity-70">
-                 <span>اقرأ الآن</span>
-                 <Eye size={10} />
+               <div className="flex flex-col items-center leading-none">
+                 <span className="text-[10px] text-emerald-500/70 group-hover:text-white/70 mb-1">PAGE</span>
+                 <span className="text-4xl font-bold font-mono tracking-tighter">{progress.currentPage}</span>
                </div>
              </button>
 
@@ -140,12 +194,22 @@ export const QuranTracker: React.FC = () => {
 
       {/* Duaa of the Day */}
       <div className="rounded-3xl p-6 border border-amber-500/20 relative group overflow-hidden bg-gradient-to-r from-amber-900/10 to-transparent">
-         <h3 className="text-amber-400 text-xs font-bold mb-3 flex items-center justify-center gap-2 relative z-10 uppercase tracking-widest">
-            <Star size={12} className="fill-amber-400" />
-            دعاء اليوم
-            <Star size={12} className="fill-amber-400" />
-         </h3>
-         <p className="text-xl text-white font-quran leading-[2.2] text-center mb-3 relative z-10">
+         <div className="flex justify-between items-start mb-2 relative z-10">
+            <div className="flex-1"></div>
+            <h3 className="text-amber-400 text-xs font-bold flex items-center justify-center gap-2 uppercase tracking-widest absolute inset-x-0 top-1">
+                <Star size={12} className="fill-amber-400" />
+                دعاء اليوم
+                <Star size={12} className="fill-amber-400" />
+            </h3>
+            <button 
+                onClick={() => setShareItem({ ...dailyDua, category: 'دعاء اليوم' })}
+                className="text-white/40 hover:text-white transition-colors p-1"
+            >
+                <Share2 size={16} />
+            </button>
+         </div>
+
+         <p className="text-xl text-white font-quran leading-[2.2] text-center mb-3 relative z-10 mt-4">
             "{dailyDua.arabic}"
          </p>
          <div className="text-center text-slate-500 text-xs relative z-10 font-quran opacity-70">

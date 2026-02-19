@@ -1,3 +1,4 @@
+
 import { Hadith, Dua, Surah } from '../types';
 
 export const TRUSTED_HADITHS: Hadith[] = [
@@ -5,116 +6,129 @@ export const TRUSTED_HADITHS: Hadith[] = [
     id: 'h1',
     text: "بُنِيَ الإِسْلاَمُ عَلَى خَمْسٍ شَهَادَةِ أَنْ لاَ إِلهَ إِلاَّ اللَّهُ وَأَنَّ مُحَمَّدًا رَسُولُ اللَّهِ، وَإِقَامِ الصَّلاَةِ، وَإِيتَاءِ الزَّكَاةِ، وَالْحَجِّ، وَصَوْمِ رَمَضَانَ",
     source: "صحيح البخاري ٨",
-    narrator: "ابن عمر رضي الله عنهما",
-    category: 'General'
+    narrator: "ابن عمر رضي الله عنهما"
   },
   {
     id: 'h2',
     text: "مَنْ صَامَ رَمَضَانَ إِيمَانًا وَاحْتِسَابًا غُفِرَ لَهُ مَا تَقَدَّمَ مِنْ ذَنْبِهِ",
     source: "صحيح البخاري ٣٨",
-    narrator: "أبي هريرة رضي الله عنه",
-    category: 'Fasting'
-  },
-  {
-    id: 'h3',
-    text: "إِذَا دَخَلَ رَمَضَانُ فُتِّحَتْ أَبْوَابُ الْجَنَّةِ، وَغُلِّقَتْ أَبْوَابُ جَهَنَّمَ، وَسُلْسِلَتِ الشَّيَاطِينُ",
-    source: "صحيح البخاري ١٨٩٩",
-    narrator: "أبي هريرة رضي الله عنه",
-    category: 'Fasting'
+    narrator: "أبي هريرة رضي الله عنه"
   },
   {
     id: 'h4',
     text: "تَسَحَّرُوا فَإِنَّ فِي السَّحُورِ بَرَكَةً",
     source: "صحيح البخاري ١٩٢٣",
-    narrator: "أنس بن مالك رضي الله عنه",
-    category: 'Fasting'
-  },
-  {
-    id: 'h5',
-    text: "لاَ يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ",
-    source: "صحيح البخاري ١٣",
-    narrator: "أنس رضي الله عنه",
-    category: 'Character'
-  },
-  {
-    id: 'h6',
-    text: "مَا نَقَصَتْ صَدَقَةٌ مِنْ مَالٍ، وَمَا زَادَ اللَّهُ عَبْدًا بِعَفْوٍ إِلاَّ عِزًّا، وَمَا تَوَاضَعَ أَحَدٌ لِلَّهِ إِلاَّ رَفَعَهُ اللَّهُ",
-    source: "صحيح مسلم ٢٥٨٨",
-    narrator: "أبي هريرة رضي الله عنه",
-    category: 'Charity'
-  },
-  {
-    id: 'h7',
-    text: "أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ",
-    source: "صحيح البخاري ٦٤٦٤",
-    narrator: "عائشة رضي الله عنها",
-    category: 'General'
-  },
-  {
-    id: 'h8',
-    text: "الصَّلاَةُ الْخَمْسُ وَالْجُمُعَةُ إِلَى الْجُمُعَةِ كَفَّارَةٌ لِمَا بَيْنَهُنَّ مَا لَمْ تُغْشَ الْكَبَائِرُ",
-    source: "صحيح مسلم ٢٣٣",
-    narrator: "أبي هريرة رضي الله عنه",
-    category: 'Prayer'
+    narrator: "أنس بن مالك رضي الله عنه"
   }
 ];
 
+// Robust Fallback Collection (Used when API fails)
+export const FALLBACK_HADITHS_FULL: Hadith[] = [
+  ...TRUSTED_HADITHS,
+  {
+    id: 'fb-1',
+    text: "يَسِّرُوا وَلاَ تُعَسِّرُوا، وَبَشِّرُوا وَلاَ تُنَفِّرُوا",
+    source: "صحيح البخاري ٦٩",
+    narrator: "أنس بن مالك",
+    english: "Make things easy for the people, and do not make it difficult for them, and make them calm (with glad tidings) and do not repulse (them)."
+  },
+  {
+    id: 'fb-2',
+    text: "إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى",
+    source: "صحيح البخاري ١",
+    narrator: "عمر بن الخطاب",
+    english: "The reward of deeds depends upon the intentions and every person will get the reward according to what he has intended."
+  },
+  {
+    id: 'fb-3',
+    text: "لاَ يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ",
+    source: "صحيح البخاري ١٣",
+    narrator: "أنس بن مالك",
+    english: "None of you will have faith till he wishes for his (Muslim) brother what he likes for himself."
+  },
+  {
+    id: 'fb-4',
+    text: "الْمُسْلِمُ مَنْ سَلِمَ الْمُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ",
+    source: "صحيح البخاري ١٠",
+    narrator: "عبد الله بن عمرو",
+    english: "A Muslim is the one from whose tongue and hands the Muslims are safe."
+  },
+  {
+    id: 'fb-5',
+    text: "مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ",
+    source: "صحيح البخاري ٦٠١٨",
+    narrator: "أبي هريرة",
+    english: "Whoever believes in Allah and the Last Day should talk what is good or keep quiet."
+  },
+  {
+    id: 'fb-6',
+    text: "لَيْسَ الشَّدِيدُ بِالصُّرَعَةِ، إِنَّمَا الشَّدِيدُ الَّذِي يَمْلِكُ نَفْسَهُ عِنْدَ الْغَضَبِ",
+    source: "صحيح البخاري ٦١١٤",
+    narrator: "أبي هريرة",
+    english: "The strong is not the one who overcomes the people by his strength, but the strong is the one who controls himself while in anger."
+  },
+  {
+    id: 'fb-7',
+    text: "اتَّقِ النَّارَ وَلَوْ بِشِقِّ تَمْرَةٍ",
+    source: "صحيح البخاري ١٤١٧",
+    narrator: "عدي بن حاتم",
+    english: "Save yourself from Hell-fire even by giving half a date-fruit in charity."
+  },
+  {
+    id: 'fb-8',
+    text: "مَثَلُ الْمُؤْمِنِينَ فِي تَوَادِّهِمْ وَتَرَاحُمِهِمْ وَتَعَاطُفِهِمْ مَثَلُ الْجَسَدِ إِذَا اشْتَكَى مِنْهُ عُضْوٌ تَدَاعَى لَهُ سَائِرُ الْجَسَدِ بِالسَّهَرِ وَالْحُمَّى",
+    source: "صحيح مسلم ٢٥٨٦",
+    narrator: "النعمان بن بشير",
+    english: "The similitude of believers in regard to mutual love, affection, fellow-feeling is that of one body; when any limb of it aches, the whole body aches, because of sleeplessness and fever."
+  },
+  {
+    id: 'fb-9',
+    text: "الْكَلِمَةُ الطَّيِّبَةُ صَدَقَةٌ",
+    source: "صحيح البخاري ٢٩٨٩",
+    narrator: "أبي هريرة",
+    english: "A good word is a charitable deed."
+  },
+  {
+    id: 'fb-10',
+    text: "مَنْ لاَ يَرْحَمْ لاَ يُرْحَمْ",
+    source: "صحيح البخاري ٥٩٩٧",
+    narrator: "أبي هريرة",
+    english: "He who is not merciful to others, will not be treated mercifully."
+  }
+];
+
+// HISN AL-MUSLIM (Fortress of the Muslim) - Highly Trusted Sources
 export const DUAS_LIBRARY: Dua[] = [
-  // Quranic Duas
-  { id: 'q1', category: 'Quran', arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ", source: "سورة البقرة: 201" },
-  { id: 'q2', category: 'Quran', arabic: "رَبَّنَا لاَ تُؤَاخِذْنَا إِن نَّسِينَا أَوْ أَخْطَأْنَا", source: "سورة البقرة: 286" },
-  { id: 'q3', category: 'Quran', arabic: "رَبَّنَا لاَ تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِن لَّدُنكَ رَحْمَةً", source: "سورة آل عمران: 8" },
-  { id: 'q4', category: 'Quran', arabic: "رَبَّنَا ظَلَمْنَا أَنفُسَنَا وَإِن لَّمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ", source: "سورة الأعراف: 23" },
-  { id: 'q5', category: 'Quran', arabic: "رَبِّ اجْعَلْنِي مُقِيمَ الصَّلاَةِ وَمِن ذُرِّيَّتِي رَبَّنَا وَتَقَبَّلْ دُعَاء", source: "سورة إبراهيم: 40" },
-  { id: 'q6', category: 'Quran', arabic: "رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي", source: "سورة طه: 25-26" },
-  { id: 'q7', category: 'Quran', arabic: "رَّبِّ زِدْنِي عِلْمًا", source: "سورة طه: 114" },
-  { id: 'q8', category: 'Quran', arabic: "لا إِلَهَ إِلا أَنتَ سُبْحَانَكَ إِنِّي كُنتُ مِنَ الظَّالِمِينَ", source: "سورة الأنبياء: 87" },
-  { id: 'q9', category: 'Quran', arabic: "رَبِّ هَبْ لِي حُكْمًا وَأَلْحِقْنِي بِالصَّالِحِينَ", source: "سورة الشعراء: 83" },
-  { id: 'q10', category: 'Quran', arabic: "رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا", source: "سورة الفرقان: 74" },
-
-  // Ramadan 1-10 (Mercy)
-  { id: 'r1_1', category: 'Ramadan 1-10', arabic: "اللَّهُمَّ ارْحَمْنِي يَا أَرْحَمَ الرَّاحِمِينَ", source: "دعاء مأثور" },
-  { id: 'r1_2', category: 'Ramadan 1-10', arabic: "رَبِّ اغْفِرْ وَارْحَمْ وَأَنْتَ خَيْرُ الرَّاحِمِينَ", source: "سورة المؤمنون: 118" },
-  { id: 'r1_3', category: 'Ramadan 1-10', arabic: "يَا حَيُّ يَا قَيُّومُ بِرَحْمَتِكَ أَسْتَغِيثُ", source: "سنن الترمذي" },
-  { id: 'r1_4', category: 'Ramadan 1-10', arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ رَحْمَةً مِنْ عِنْدِكَ تَهْدِي بِهَا قَلْبِي", source: "من جوامع الدعاء" },
-  { id: 'r1_5', category: 'Ramadan 1-10', arabic: "اللَّهُمَّ اجْعَلْ صِيَامِي فِيهِ صِيَامَ الصَّائِمِينَ وَقِيَامِي فِيهِ قِيَامَ الْقَائِمِينَ", source: "دعاء يومي" },
-
-  // Ramadan 11-20 (Forgiveness)
-  { id: 'r2_1', category: 'Ramadan 11-20', arabic: "اللَّهُمَّ اغْفِرْ لِي ذُنُوبِي كُلَّهَا، دِقَّهَا وَجِلَّهَا، وَأَوَّلَهَا وَآخِرَهَا", source: "صحيح مسلم" },
-  { id: 'r2_2', category: 'Ramadan 11-20', arabic: "أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لاَ إِلَهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ", source: "سنن الترمذي" },
-  { id: 'r2_3', category: 'Ramadan 11-20', arabic: "اللَّهُمَّ بَاعِدْ بَيْنِي وَبَيْنَ خَطَايَايَ كَمَا بَاعَدْتَ بَيْنَ الْمَشْرِقِ وَالْمَغْرِبِ", source: "متفق عليه" },
-  { id: 'r2_4', category: 'Ramadan 11-20', arabic: "اللَّهُمَّ إِنِّي ظَلَمْتُ نَفْسِي ظُلْمًا كَثِيرًا وَلاَ يَغْفِرُ الذُّنُوبَ إِلاَّ أَنْتَ", source: "متفق عليه" },
-  { id: 'r2_5', category: 'Ramadan 11-20', arabic: "اللَّهُمَّ طَهِّرْنِي مِنَ الذُّنُوبِ وَالْخَطَايَا كَمَا يُنَقَّى الثَّوْبُ الأَبْيَضُ مِنَ الدَّنَسِ", source: "متفق عليه" },
-
-  // Ramadan 21-30 (Refuge/Laylatul Qadr)
-  { id: 'r3_1', category: 'Ramadan 21-30', arabic: "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي", source: "سنن الترمذي (دعاء ليلة القدر)" },
-  { id: 'r3_2', category: 'Ramadan 21-30', arabic: "اللَّهُمَّ أَجِرْنِي مِنَ النَّارِ", source: "دعاء مأثور" },
-  { id: 'r3_3', category: 'Ramadan 21-30', arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْجَنَّةَ وَمَا قَرَّبَ إِلَيْهَا مِنْ قَوْلٍ أَوْ عَمَلٍ", source: "سنن ابن ماجه" },
-  { id: 'r3_4', category: 'Ramadan 21-30', arabic: "اللَّهُمَّ اخْتِمْ لَنَا بِخَيْرٍ، وَاجْعَلْ عَوَاقِبَ أُمُورِنَا خَيْرًا", source: "دعاء مأثور" },
-  { id: 'r3_5', category: 'Ramadan 21-30', arabic: "اللَّهُمَّ أَعْتِقْ رِقَابَنَا مِنَ النَّارِ", source: "دعاء مأثور" },
-
-  // Daily Essentials
-  { id: 'd1', category: 'Daily', arabic: "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ", source: "سنن أبي داود" },
-  { id: 'd2', category: 'Daily', arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى", source: "صحيح مسلم" },
-  { id: 'd3', category: 'Daily', arabic: "يَا مُقَلِّبَ الْقُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ", source: "سنن الترمذي" },
-  { id: 'd4', category: 'Daily', arabic: "اللَّهُمَّ اكْفِنِي بِحَلاَلِكَ عَنْ حَرَامِكَ وَأَغْنِنِي بِفَضْلِكَ عَمَّنْ سِوَاكَ", source: "سنن الترمذي" },
-  { id: 'd5', category: 'Daily', arabic: "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ", source: "الصلاة على النبي" },
-  { id: 'd6', category: 'Daily', arabic: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ، وَالْعَجْزِ وَالْكَسَلِ", source: "صحيح البخاري" },
-  { id: 'd7', category: 'Daily', arabic: "رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا", source: "أذكار الصباح والمساء" },
-  { id: 'd8', category: 'Daily', arabic: "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ", source: "سنن أبي داود" },
+  // Morning & Evening
+  { id: 'hm1', category: 'أذكار الصباح والمساء', arabic: "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ لاَ إِلَهَ إِلاَّ اللَّهُ وَحْدَهُ لاَ شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", source: "صحيح مسلم", reference: "حصن المسلم" },
+  { id: 'hm2', category: 'أذكار الصباح والمساء', arabic: "بِسْمِ اللَّهِ الَّـذِي لاَ يَضُـرُّ مَعَ اسْمِـهِ شَيْءٌ فِي الأَرْضِ وَلاَ فِي السَّمَـاءِ وَهُـوَ السَّمِـيعُ الْعَلِـيمُ", source: "سنن أبي داود", reference: "حصن المسلم" },
+  { id: 'hm3', category: 'أذكار الصباح والمساء', arabic: "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ", source: "سنن الترمذي", reference: "حصن المسلم" },
   
-  // Forgiveness specific
-  { id: 'f1', category: 'Forgiveness', arabic: "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ مِائَةَ مَرَّةٍ", source: "صحيح البخاري (تغفر الذنوب)" },
-  { id: 'f2', category: 'Forgiveness', arabic: "أَسْتَغْفِرُ اللهَ وَأَتُوبُ إِلَيْهِ", source: "صحيح مسلم" },
+  // Quranic Duas (Rabbana)
+  { id: 'q1', category: 'أدعية قرآنية', arabic: "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ", source: "سورة البقرة: 201" },
+  { id: 'q2', category: 'أدعية قرآنية', arabic: "رَبَّنَا لاَ تُؤَاخِذْنَا إِن نَّسِينَا أَوْ أَخْطَأْنَا", source: "سورة البقرة: 286" },
+  { id: 'q3', category: 'أدعية قرآنية', arabic: "رَبَّنَا لاَ تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِن لَّدُنكَ رَحْمَةً", source: "سورة آل عمران: 8" },
+  
+  // Istighfar & Forgiveness
+  { id: 'ist1', category: 'الاستغفار', arabic: "اللَّهُمَّ أَنْتَ رَبِّي لاَ إِلهَ إِلاَّ أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لاَ يَغْفِرُ الذُّنُوبَ إِلاَّ أَنْتَ", source: "صحيح البخاري (سيد الاستغفار)" },
+  { id: 'ist2', category: 'الاستغفار', arabic: "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ", source: "صحيح مسلم" },
+
+  // Prayer & Wudu
+  { id: 'pr1', category: 'الصلاة', arabic: "اللَّهُمَّ بَاعِدْ بَيْنِي وَبَيْنَ خَطَايَايَ كَمَا بَاعَدْتَ بَيْنَ الْمَشْرِقِ وَالْمَغْرِبِ، اللَّهُمَّ نَقِّنِي مِنْ خَطَايَايَ كَمَا يُنَقَّى الثَّوْبُ الأَبْيَضُ مِنَ الدَّنَسِ", source: "متفق عليه (دعاء الاستفتاح)" },
+  { id: 'pr2', category: 'الصلاة', arabic: "سُبْحَانَ رَبِّيَ الْعَظِيمِ", source: "دعاء الركوع" },
+  { id: 'pr3', category: 'الصلاة', arabic: "سُبْحَانَ رَبِّيَ الأَعْلَى", source: "دعاء السجود" },
+  
+  // Daily Life
+  { id: 'dl1', category: 'الحياة اليومية', arabic: "بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ، وَلاَ حَوْلَ وَلاَ قُوَّةَ إِلاَّ بِاللَّهِ", source: "سنن أبي داود (عند الخروج من المنزل)" },
+  { id: 'dl2', category: 'الحياة اليومية', arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ خَيْرَ الْمَوْلِجِ وَخَيْرَ الْمَخْرَجِ، بِسْمِ اللَّهِ وَلَجْنَا، وَبِسْمِ اللَّهِ خَرَجْنَا، وَعَلَى اللَّهِ رَبِّنَا تَوَكَّلْنَا", source: "سنن أبي داود (عند دخول المنزل)" },
+  { id: 'dl3', category: 'الحياة اليومية', arabic: "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَكَفَانَا وَآوَانَا", source: "صحيح مسلم (عند النوم)" },
+
+  // Ramadan Specific
+  { id: 'rm1', category: 'رمضان', arabic: "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي", source: "سنن الترمذي (ليلة القدر)" },
+  { id: 'rm2', category: 'رمضان', arabic: "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الأَجْرُ إِنْ شَاءَ اللَّهُ", source: "سنن أبي داود (عند الإفطار)" }
 ];
 
-export const RAMADAN_DUAS = [
-  { title: 'دعاء الإفطار', arabic: "اللَّهُمَّ لَكَ صُمْتُ وَعَلَى رِزْقِكَ أَفْطَرْتُ", source: "سنن أبي داود" },
-  { title: 'عند الإفطار', arabic: "ذَهَبَ الظَّمَأُ وَابْتَلَّتِ الْعُرُوقُ وَثَبَتَ الأَجْرُ إِنْ شَاءَ اللَّهُ", source: "سنن أبي داود" },
-  { title: 'ليلة القدر', arabic: "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي", source: "سنن الترمذي" },
-  { title: 'دعاء القيام', arabic: "اللَّهُمَّ اجْعَلْ فِي قَلْبِي نُورًا، وَفِي بَصَرِي نُورًا، وَفِي سَمْعِي نُورًا", source: "صحيح مسلم" },
-  { title: 'سيد الاستغفار', arabic: "اللَّهُمَّ أَنْتَ رَبِّي لاَ إِلهَ إِلاَّ أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ", source: "صحيح البخاري" }
-];
+export const RAMADAN_DUAS = DUAS_LIBRARY.filter(d => d.category === 'رمضان' || d.category === 'أدعية قرآنية');
 
 export const SURAH_NAMES: Surah[] = [
   { number: 1, name: "الفاتحة", englishName: "Al-Fatiha", numberOfAyahs: 7, revelationType: "Meccan", startPage: 1 },
@@ -232,3 +246,29 @@ export const SURAH_NAMES: Surah[] = [
   { number: 113, name: "الفلق", englishName: "Al-Falaq", numberOfAyahs: 5, revelationType: "Meccan", startPage: 604 },
   { number: 114, name: "الناس", englishName: "An-Nas", numberOfAyahs: 6, revelationType: "Meccan", startPage: 604 }
 ];
+
+export const JUZ_START_PAGES = [
+  { id: 1, startPage: 1 }, { id: 2, startPage: 22 }, { id: 3, startPage: 42 },
+  { id: 4, startPage: 62 }, { id: 5, startPage: 82 }, { id: 6, startPage: 102 },
+  { id: 7, startPage: 121 }, { id: 8, startPage: 142 }, { id: 9, startPage: 162 },
+  { id: 10, startPage: 182 }, { id: 11, startPage: 201 }, { id: 12, startPage: 222 },
+  { id: 13, startPage: 242 }, { id: 14, startPage: 262 }, { id: 15, startPage: 282 },
+  { id: 16, startPage: 302 }, { id: 17, startPage: 322 }, { id: 18, startPage: 342 },
+  { id: 19, startPage: 362 }, { id: 20, startPage: 382 }, { id: 21, startPage: 402 },
+  { id: 22, startPage: 422 }, { id: 23, startPage: 442 }, { id: 24, startPage: 462 },
+  { id: 25, startPage: 482 }, { id: 26, startPage: 502 }, { id: 27, startPage: 522 },
+  { id: 28, startPage: 542 }, { id: 29, startPage: 562 }, { id: 30, startPage: 582 }
+];
+
+// Helpers
+export const getSurahInfoByPage = (page: number): Surah | null => {
+  if (page < 1 || page > 604) return null;
+  // Reverse search to find the last Surah that starts at or before the current page
+  return [...SURAH_NAMES].reverse().find(s => s.startPage <= page) || SURAH_NAMES[0];
+};
+
+export const getJuzInfoByPage = (page: number): number => {
+  if (page < 1 || page > 604) return 0;
+  const juz = [...JUZ_START_PAGES].reverse().find(j => j.startPage <= page);
+  return juz ? juz.id : 0;
+};
