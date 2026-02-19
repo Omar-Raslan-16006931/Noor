@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Loader2, ChevronLeft, ChevronRight, X, Maximize2, Minimize2, 
@@ -223,7 +222,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
       if (selectedAyahIndices.size === 0) return;
 
       // Sort indices to maintain order
-      const indices = Array.from(selectedAyahIndices).sort((a, b) => a - b);
+      const indices = Array.from(selectedAyahIndices).sort((a: number, b: number) => a - b);
       const selectedAyahs = indices.map(i => ayahs[i]);
       
       // Construct combined text
@@ -262,17 +261,18 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     // Ensure start and end are numbers
     if (start === null || end === null) return;
     
+    // Calculate distance
     const distance = start - end;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    const isLeftSwipe = distance > minSwipeDistance; // Dragged Finger Left (Move viewport right)
+    const isRightSwipe = distance < -minSwipeDistance; // Dragged Finger Right (Move viewport left)
     
-    // In RTL / Quran: 
-    // Swipe Left (drag right-to-left) -> Next Page
-    // Swipe Right (drag left-to-right) -> Prev Page
-    if (isLeftSwipe && page < 604) {
+    // Reverse Logic for RTL Book Feeling
+    // If I swipe my finger to the RIGHT (dragging current page to right), I should see the NEXT page (which comes from left).
+    if (isRightSwipe && page < 604) {
         handleNext();
     }
-    if (isRightSwipe && page > 0) {
+    // If I swipe my finger to the LEFT (dragging current page to left), I should see the PREV page (which comes from right).
+    if (isLeftSwipe && page > 0) {
         handlePrev();
     }
   };
@@ -367,12 +367,14 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
   const currentSurah = ayahs.length > 0 ? ayahs[0].surah : (currentSurahStatic || { name: 'القرآن الكريم', englishName: 'The Holy Quran', revelationType: '' });
   const isCover = page === 0;
 
+  // Determine page side for shadow logic (Odd = Right Page, Even = Left Page in Madani Mushaf usually)
+  const isOddPage = page % 2 !== 0;
+
   return (
     <div className={`fixed inset-0 z-[100] flex flex-col font-sans select-none overflow-hidden transition-colors duration-500 ${isNightMode ? 'bg-slate-950 text-slate-200' : 'bg-[#F4F1EA] text-slate-900 paper-texture'}`}>
        <style>{`
          .paper-texture {
             background-color: #F4F1EA;
-            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23d6d3c9' fill-opacity='0.15' fill-rule='evenodd'/%3E%3C/svg%3E");
          }
          .glass-panel-dark {
            background: rgba(15, 23, 42, 0.9);
@@ -506,12 +508,12 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
          onTouchEnd={onTouchEnd}
        >
           {mode === 'MUSHAF' ? (
-             <div className="relative w-full h-full flex items-center justify-center p-0 md:p-6 transition-transform duration-500 ease-out">
-                {/* Vignette effect for book feel */}
-                <div className={`absolute inset-0 pointer-events-none transition-colors duration-500 ${isNightMode ? 'bg-black/40' : ''}`} style={{ background: isNightMode ? 'none' : 'radial-gradient(circle, transparent 70%, rgba(139, 69, 19, 0.05) 100%)' }}></div>
+             <div className="relative w-full h-full flex items-center justify-center p-0 transition-transform duration-500 ease-out">
+                {/* Book Background Vignette - Reduced for cleaner look */}
+                <div className={`absolute inset-0 pointer-events-none transition-colors duration-500 ${isNightMode ? 'bg-black/80' : 'bg-[#e3dcd3]'}`}></div>
                 
                 {loading && !error && (
-                   <div className="absolute inset-0 flex items-center justify-center">
+                   <div className="absolute inset-0 flex items-center justify-center z-20">
                       <div className="relative">
                          <div className="absolute inset-0 bg-amber-500/20 blur-xl rounded-full animate-pulse"></div>
                          <Loader2 className="animate-spin text-amber-600 relative z-10" size={48} />
@@ -520,7 +522,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                 )}
 
                 {error && (
-                   <div className="flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl max-w-sm mx-4 shadow-xl border border-stone-200">
+                   <div className="flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl max-w-sm mx-4 shadow-xl border border-stone-200 z-20">
                       <AlertCircle className="text-red-500 mb-4" size={48} />
                       <h3 className="text-xl font-bold text-stone-800 mb-2">تعذر تحميل الصفحة</h3>
                       <p className="text-stone-500 text-sm mb-6 dir-ltr opacity-70 font-mono text-[10px]">{imageUrl}</p>
@@ -533,25 +535,64 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                    </div>
                 )}
 
-                <img 
+                {/* Main Page Image Container - Styled to look like a book page */}
+                <div 
                    key={page}
-                   src={imageUrl} 
-                   alt={`Page ${page}`}
                    className={`
-                      max-h-full max-w-full object-contain transition-all duration-500 
-                      ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
-                      mix-blend-multiply
+                      relative flex items-center justify-center overflow-hidden
+                      ${direction === 'next' ? 'animate-in slide-in-from-left duration-500' : 'animate-in slide-in-from-right duration-500'}
+                      ${isNightMode ? 'bg-slate-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : 'bg-[#fffbf2]'}
                    `}
-                   onLoad={() => setLoading(false)}
-                   onError={() => { setLoading(false); setError(true); }}
-                   style={{ 
-                      // Night mode: invert to make background dark and text light, then rotate hue to keep colors natural-ish, lower brightness for comfort
-                      filter: isNightMode 
-                        ? 'invert(1) hue-rotate(180deg) brightness(0.85) grayscale(20%)' 
-                        : 'sepia(10%) contrast(105%)',
-                      mixBlendMode: isNightMode ? 'normal' : 'multiply'
+                   style={{
+                       // Dynamic sizing to maximize screen real estate - INCREASED SIZE
+                       height: '100vh',
+                       width: '100%',
+                       maxWidth: '100vw',
+                       
+                       // Page Shape Logic - Simplified for max area
+                       borderTopRightRadius: isOddPage ? '4px' : '0',
+                       borderBottomRightRadius: isOddPage ? '4px' : '0',
+                       borderTopLeftRadius: !isOddPage ? '4px' : '0',
+                       borderBottomLeftRadius: !isOddPage ? '4px' : '0',
+                       
+                       // Page Shadows (Spine vs Edge)
+                       boxShadow: isNightMode ? 'none' : 
+                         isOddPage 
+                           ? '10px 0 25px rgba(0,0,0,0.15), -1px 0 2px rgba(0,0,0,0.1)' // Right Page
+                           : '-10px 0 25px rgba(0,0,0,0.15), 1px 0 2px rgba(0,0,0,0.1)' // Left Page
                    }}
-                />
+                >
+                   {/* 1. Spine Shadow (Inner Gradient) */}
+                   {!isNightMode && (
+                       <div className={`absolute top-0 bottom-0 w-8 z-10 pointer-events-none mix-blend-multiply opacity-15
+                           ${isOddPage 
+                               ? 'left-0 bg-gradient-to-r from-slate-800 via-slate-600 to-transparent' 
+                               : 'right-0 bg-gradient-to-l from-slate-800 via-slate-600 to-transparent'
+                           }
+                       `}></div>
+                   )}
+
+                   <img 
+                      src={imageUrl} 
+                      alt={`Page ${page}`}
+                      className={`
+                         w-full h-full
+                         ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
+                         object-contain
+                         transition-all duration-500 
+                         mix-blend-multiply
+                      `}
+                      onLoad={() => setLoading(false)}
+                      onError={() => { setLoading(false); setError(true); }}
+                      style={{ 
+                         // Night mode filters
+                         filter: isNightMode 
+                           ? 'invert(1) hue-rotate(180deg) brightness(0.85) grayscale(20%)' 
+                           : 'sepia(8%) contrast(105%)',
+                         mixBlendMode: isNightMode ? 'normal' : 'multiply'
+                      }}
+                   />
+                </div>
              </div>
           ) : (
              <div className="w-full h-full overflow-y-auto custom-scrollbar pt-28 pb-40 px-4 max-w-3xl mx-auto">
@@ -797,4 +838,4 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
        </div>
     </div>
   );
-};
+}

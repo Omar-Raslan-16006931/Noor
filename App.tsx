@@ -8,6 +8,7 @@ import { HadithView } from './components/HadithView';
 import { Navigation } from './components/Navigation';
 import { DynamicBackground } from './components/DynamicBackground';
 import { Settings } from './components/Settings';
+import { InstallPrompt } from './components/InstallPrompt';
 import { supabase } from './lib/supabaseClient';
 import { storageService } from './services/storage';
 import { AppTab, PrayerData } from './types';
@@ -348,6 +349,8 @@ const App: React.FC = () => {
          sunriseTime={prayerData?.timings.Sunrise}
          maghribTime={prayerData?.timings.Maghrib}
       />
+      
+      <InstallPrompt />
 
       <main className="relative z-10 max-w-lg mx-auto min-h-screen flex flex-col">
         <header className="px-5 pt-8 pb-4 flex justify-between items-center bg-gradient-to-b from-slate-900/60 to-transparent">

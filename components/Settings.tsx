@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Auth } from './Auth';
 import { Session } from '@supabase/supabase-js';
-import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart } from 'lucide-react';
+import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { PrayerData } from '../types';
 
@@ -46,6 +46,17 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
             <SettingsIcon size={20} />
          </div>
          <h2 className="text-2xl font-bold text-white">الإعدادات</h2>
+      </div>
+
+      {/* Free & No Ads Banner */}
+      <div className="bg-gradient-to-r from-emerald-900/40 to-emerald-800/40 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3 shadow-lg">
+         <div className="bg-emerald-500/20 p-2 rounded-full text-emerald-400">
+             <ShieldCheck size={24} />
+         </div>
+         <div>
+             <p className="text-white font-bold text-sm">مجاني بالكامل 100٪</p>
+             <p className="text-emerald-200/80 text-xs">خالٍ من الإعلانات ومفتوح المصدر</p>
+         </div>
       </div>
 
       {/* Account Section (Moved to Top) */}
