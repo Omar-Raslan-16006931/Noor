@@ -1,26 +1,27 @@
+
 import { createClient } from '@supabase/supabase-js';
 
-// 1. Load Variables from the Environment (Vercel or .env.local)
-// Note: We use 'import.meta.env' because this is likely a Vite project.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
+// Supabase Credentials
+// We use a fallback to hardcoded values if env vars are missing to ensure the app runs immediately.
+const env = (import.meta as any).env || {};
+const supabaseUrl = env.VITE_SUPABASE_URL || 'https://offjauimlpovzarkgabx.supabase.co';
+const supabaseKey = env.VITE_SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mZmphdWltbHBvdnphcmtnYWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0MjMzMDAsImV4cCI6MjA4Njk5OTMwMH0.riLOANK8gBcy70tlOTd4KWsGpMRJbrnaPtO8_pTWPLk';
 
-// 2. Safety Check: Prevent the app from crashing silently if keys are missing
 if (!supabaseUrl || !supabaseKey) {
-  console.error("CRITICAL: Supabase environment variables are missing.");
-  throw new Error('Missing Supabase Credentials. Check your .env.local file or Vercel Dashboard.');
+  throw new Error('Missing Supabase Credentials');
 }
 
-// 3. Initialize the Client
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Exports required by App.tsx
 export const isConfigured = true;
 
 export const setupSupabase = (_url: string, _key: string) => {
-  console.log('Supabase is configured via Environment Variables.');
+  // No-op for hardcoded credentials
+  console.log('Setup Supabase called');
 };
 
 export const disconnectSupabase = () => {
-  console.log('Disconnect Supabase called (No-op for Env auth)');
+  // No-op for hardcoded credentials
+  console.log('Disconnect Supabase called');
 };
