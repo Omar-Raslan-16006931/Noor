@@ -383,6 +383,20 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
            border: 1px solid rgba(255, 255, 255, 0.1);
            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
          }
+         @keyframes slideInFromLeft {
+           0% { transform: translateX(-100%); opacity: 0; }
+           100% { transform: translateX(0); opacity: 1; }
+         }
+         @keyframes slideInFromRight {
+           0% { transform: translateX(100%); opacity: 0; }
+           100% { transform: translateX(0); opacity: 1; }
+         }
+         .animate-slide-in-left {
+           animation: slideInFromLeft 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+         }
+         .animate-slide-in-right {
+           animation: slideInFromRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+         }
        `}</style>
 
        <audio ref={audioRef} onEnded={handleAudioEnded} className="hidden" />
@@ -540,7 +554,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                    key={page}
                    className={`
                       relative flex items-center justify-center overflow-hidden
-                      ${direction === 'next' ? 'animate-in slide-in-from-left duration-500' : 'animate-in slide-in-from-right duration-500'}
+                      ${direction === 'next' ? 'animate-slide-in-left' : 'animate-slide-in-right'}
                       ${isNightMode ? 'bg-slate-900 shadow-[0_0_50px_rgba(0,0,0,0.5)]' : 'bg-[#fffbf2]'}
                    `}
                    style={{
