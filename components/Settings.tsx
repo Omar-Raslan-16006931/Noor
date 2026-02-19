@@ -55,7 +55,7 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
          </div>
          <div>
              <p className="text-white font-bold text-sm">مجاني بالكامل 100٪</p>
-             <p className="text-emerald-200/80 text-xs">خالٍ من الإعلانات ومفتوح المصدر</p>
+             <p className="text-emerald-200/80 text-xs">خالٍ من الإعلانات</p>
          </div>
       </div>
 
