@@ -38,20 +38,17 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
   const fetchPageData = async () => {
     setLoading(true);
     try {
-      // Fetch Audio (Alafasy) - This endpoint includes audio urls
       const audioResponse = await fetch(`https://api.alquran.cloud/v1/page/${page}/ar.alafasy`);
       const audioJson = await audioResponse.json();
       
-      // Fetch Uthmanic Text (High accuracy)
       const textResponse = await fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`);
       const textJson = await textResponse.json();
 
       if (audioJson.code === 200 && textJson.code === 200) {
-        // Merge text and audio data
         const mergedData = textJson.data.ayahs.map((textAyah: any, index: number) => ({
           ...textAyah,
           audio: audioJson.data.ayahs[index].audio,
-          text: textAyah.text // Ensure Uthmanic text
+          text: textAyah.text
         }));
         setAyahs(mergedData);
       }
@@ -97,7 +94,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
   const imageUrl = `https://raw.githubusercontent.com/media-host/quran-pages/main/images/page${paddedPage}.png`;
 
   return (
-    <div className={`fixed inset-0 z-[100] flex flex-col transition-colors duration-500 ${isFullscreen ? 'bg-black' : 'bg-[#1a1c23]'}`}>
+    <div className={`fixed inset-0 z-[100] flex flex-col transition-colors duration-500 ${isFullscreen ? 'bg-black' : 'bg-[#0f172a]'}`}>
        <style>{`
          @keyframes slideInRight {
            from { opacity: 0; transform: translateX(30px); }
@@ -142,7 +139,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           </div>
           
           <div className="flex flex-col items-center">
-             <span className="text-emerald-500 font-bold text-sm sm:text-lg font-serif">
+             <span className="text-emerald-500 font-bold text-sm sm:text-lg font-quran">
                 {mode === 'RECITATION' && ayahs.length > 0 ? ayahs[0].surah.name : 'القرآن الكريم'}
              </span>
              <span className="text-[10px] text-slate-400">صفحة {page}</span>
@@ -158,7 +155,6 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           
           {mode === 'MUSHAF' && (
              <>
-               {/* Book Spine Shadows */}
                <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black/20 to-transparent pointer-events-none z-10"></div>
                <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/20 to-transparent pointer-events-none z-10"></div>
                
@@ -191,12 +187,12 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                 ) : (
                    <div className="space-y-6 pb-20">
                       <div className="text-center py-4 border-b border-white/10 mb-4">
-                         <h2 className="text-2xl text-emerald-400 font-quran mb-1">{ayahs[0]?.surah.name}</h2>
+                         <h2 className="text-3xl text-emerald-400 font-quran mb-1">{ayahs[0]?.surah.name}</h2>
                          <p className="text-xs text-slate-500">{ayahs[0]?.surah.englishName}</p>
                       </div>
                       
                       {ayahs.map((ayah) => (
-                         <div key={ayah.number} className="p-4 rounded-xl bg-slate-900/50 border border-white/5 hover:border-emerald-500/30 transition-colors group">
+                         <div key={ayah.number} className="p-6 rounded-3xl bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-colors group">
                             <div className="flex justify-between items-start gap-4 mb-4">
                                <div className="bg-emerald-900/30 w-8 h-8 rounded-full flex items-center justify-center text-xs text-emerald-400 font-mono border border-emerald-500/20">
                                   {ayah.numberInSurah}
@@ -208,7 +204,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                                   {playingAudio === ayah.audio ? <Pause size={16} /> : <Play size={16} />}
                                </button>
                             </div>
-                            <p className="text-right text-2xl sm:text-3xl leading-[2.2] text-white font-quran dir-rtl">
+                            <p className="text-right text-3xl leading-[2.4] text-white font-quran dir-rtl">
                                {ayah.text}
                             </p>
                          </div>
@@ -224,7 +220,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           <button 
              onClick={handleNext}
              disabled={page >= 604}
-             className="flex items-center gap-2 px-5 py-3 bg-emerald-700/80 rounded-xl text-white disabled:opacity-50 hover:bg-emerald-600 transition-all active:scale-95 shadow-lg"
+             className="flex items-center gap-2 px-6 py-3 bg-emerald-600 rounded-xl text-white disabled:opacity-50 hover:bg-emerald-500 transition-all active:scale-95 shadow-lg"
           >
              <ChevronRight size={20} />
              <span className="font-bold hidden sm:inline">التالية</span>
@@ -240,7 +236,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           <button 
              onClick={handlePrev}
              disabled={page <= 1}
-             className="flex items-center gap-2 px-5 py-3 bg-slate-800 rounded-xl text-white disabled:opacity-50 hover:bg-emerald-700 transition-all active:scale-95 shadow-lg"
+             className="flex items-center gap-2 px-6 py-3 bg-slate-800 rounded-xl text-white disabled:opacity-50 hover:bg-emerald-700 transition-all active:scale-95 shadow-lg"
           >
              <span className="font-bold hidden sm:inline">السابقة</span>
              <ChevronLeft size={20} />

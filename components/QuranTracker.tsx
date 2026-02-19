@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { storageService } from '../services/storage';
 import { QuranProgress } from '../types';
-import { BookOpen, Award, CheckCircle2, ChevronRight, ChevronLeft, Eye, Star, Flame, Trophy } from 'lucide-react';
+import { BookOpen, ChevronRight, ChevronLeft, Eye, Star, Flame, Trophy } from 'lucide-react';
 import { QuranReader } from './QuranReader';
 import { DUAS_LIBRARY } from '../data/staticContent';
 
@@ -33,19 +33,16 @@ export const QuranTracker: React.FC = () => {
       lastAyah: ayah || currentProgress.lastAyah,
     };
     
-    // storageService.saveQuranProgress handles the date update and streak logic internally
     const saved = storageService.saveQuranProgress(updated);
     setProgress(saved);
   };
 
   const updateGoal = (goal: number) => {
     const updated = { ...progress, khatamGoal: goal };
-    // Just save goal, don't mess with date/streak yet unless they read
     localStorage.setItem('noor_quran_progress', JSON.stringify(updated));
     setProgress(updated);
   };
 
-  // Calculations
   const totalPagesGoal = TOTAL_PAGES * progress.khatamGoal;
   const percentage = Math.min(100, Math.round((progress.currentPage / totalPagesGoal) * 100));
   const pagesPerDay = Math.ceil(TOTAL_PAGES / RAMADAN_DAYS) * progress.khatamGoal;
@@ -64,7 +61,7 @@ export const QuranTracker: React.FC = () => {
       {/* Header & Streak */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-           <h2 className="text-xl font-bold text-white font-serif">ختمة رمضان</h2>
+           <h2 className="text-xl font-bold text-white font-quran">ختمة رمضان</h2>
            <BookOpen size={18} className="text-emerald-500" />
         </div>
         
@@ -75,20 +72,20 @@ export const QuranTracker: React.FC = () => {
       </div>
 
       {/* Goal Selector */}
-      <div className="glass-panel rounded-2xl p-3">
-        <p className="text-[10px] text-slate-400 mb-2 font-bold">هدفي في رمضان</p>
+      <div className="glass-panel rounded-2xl p-4 bg-white/5">
+        <p className="text-[10px] text-slate-400 mb-2 font-bold uppercase tracking-wider">هدفي في رمضان</p>
         <div className="flex gap-2">
            {[1, 2, 3].map(g => (
              <button
                key={g}
                onClick={() => updateGoal(g)}
-               className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${
+               className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 font-quran ${
                  progress.khatamGoal === g 
-                   ? 'bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20' 
-                   : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                   ? 'bg-emerald-600 text-white shadow-lg' 
+                   : 'bg-white/5 text-slate-400 hover:bg-white/10'
                }`}
              >
-               {g === 1 ? 'ختمة' : g === 2 ? 'ختمتين' : '3 ختمات'}
+               {g === 1 ? 'ختمة واحدة' : g === 2 ? 'ختمتين' : '3 ختمات'}
                {progress.khatamGoal === g && <Trophy size={12} />}
              </button>
            ))}
@@ -96,73 +93,62 @@ export const QuranTracker: React.FC = () => {
       </div>
 
       {/* Reading Controls Card */}
-      <div className="glass-card rounded-3xl p-5 border border-emerald-500/20 relative overflow-hidden group">
+      <div className="glass-panel rounded-[2rem] p-6 border border-white/10 relative overflow-hidden group bg-gradient-to-br from-white/10 to-transparent">
          <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>
          
-         {/* Circular Progress (Smaller) */}
-         <div className="absolute -right-6 -top-6 w-24 h-24 opacity-10">
-            <svg className="w-full h-full" viewBox="0 0 36 36">
-               <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#10b981" strokeWidth="4" />
-            </svg>
-         </div>
-
-         <div className="text-center mb-4 relative z-10">
-           <p className="text-slate-400 text-xs mb-3">متابعة القراءة من الصفحة</p>
-           <div className="flex items-center justify-center gap-3">
+         <div className="text-center mb-6 relative z-10">
+           <p className="text-slate-400 text-xs mb-4 font-bold tracking-wider uppercase">متابعة القراءة من الصفحة</p>
+           <div className="flex items-center justify-center gap-4">
              <button 
                onClick={() => updatePage(progress.currentPage - 1)}
-               className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 active:scale-95 transition-colors"
+               className="p-3 bg-white/5 rounded-full hover:bg-white/10 active:scale-95 transition-colors border border-white/5"
              >
-               <ChevronRight size={18} className="text-slate-300" />
+               <ChevronRight size={20} className="text-slate-300" />
              </button>
              
              <button 
                onClick={() => setIsReading(true)}
-               className="w-24 py-2 bg-emerald-600/20 border border-emerald-500/50 rounded-xl text-emerald-400 font-bold hover:bg-emerald-600 hover:text-white transition-all group flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]"
+               className="w-32 py-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl text-emerald-400 hover:bg-emerald-600 hover:text-white transition-all group flex flex-col items-center justify-center gap-1 shadow-lg backdrop-blur-sm"
              >
-               <span className="text-xl font-serif pt-1">{progress.currentPage}</span>
-               <Eye size={14} />
+               <span className="text-4xl font-bold font-mono tracking-tighter">{progress.currentPage}</span>
+               <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest opacity-70">
+                 <span>اقرأ الآن</span>
+                 <Eye size={10} />
+               </div>
              </button>
 
              <button 
                onClick={() => updatePage(progress.currentPage + 1)}
-               className="p-2 bg-emerald-600 rounded-full hover:bg-emerald-500 active:scale-95 shadow-lg shadow-emerald-900/50 transition-colors"
+               className="p-3 bg-emerald-600 rounded-full hover:bg-emerald-500 active:scale-95 shadow-lg shadow-emerald-900/50 transition-colors"
              >
-               <ChevronLeft size={18} className="text-white" />
+               <ChevronLeft size={20} className="text-white" />
              </button>
            </div>
          </div>
 
-         <div className="flex gap-2 mt-4 relative z-10">
-            <div className="flex-1 bg-slate-900/60 rounded-xl p-2 text-center border border-white/5">
-              <p className="text-[10px] text-slate-500 mb-0.5">المتبقي</p>
-              <p className="text-lg font-bold text-emerald-400 leading-none">{remainingPages}</p>
+         <div className="flex gap-3 mt-4 relative z-10">
+            <div className="flex-1 bg-black/20 rounded-2xl p-3 text-center border border-white/5 backdrop-blur-sm">
+              <p className="text-[10px] text-slate-400 mb-1">المتبقي</p>
+              <p className="text-xl font-mono font-bold text-white leading-none">{remainingPages}</p>
             </div>
-            <div className="flex-1 bg-slate-900/60 rounded-xl p-2 text-center border border-white/5">
-              <p className="text-[10px] text-slate-500 mb-0.5">الإنجاز</p>
-              <p className="text-lg font-bold text-amber-400 leading-none">{percentage}%</p>
-            </div>
-            <div className="flex-1 bg-slate-900/60 rounded-xl p-2 text-center border border-white/5">
-              <p className="text-[10px] text-slate-500 mb-0.5">الورد</p>
-              <p className="text-lg font-bold text-blue-400 leading-none">{pagesPerDay}</p>
+            <div className="flex-1 bg-black/20 rounded-2xl p-3 text-center border border-white/5 backdrop-blur-sm">
+              <p className="text-[10px] text-slate-400 mb-1">الإنجاز</p>
+              <p className="text-xl font-mono font-bold text-emerald-400 leading-none">{percentage}%</p>
             </div>
          </div>
       </div>
 
       {/* Duaa of the Day */}
-      <div className="bg-gradient-to-br from-amber-900/30 to-slate-900 rounded-2xl p-4 border border-amber-500/20 relative group overflow-hidden">
-         <div className="absolute -right-4 -top-4 bg-amber-500/10 w-20 h-20 rounded-full blur-xl"></div>
-         <h3 className="text-amber-400 text-xs font-bold mb-2 flex items-center gap-1.5 relative z-10">
+      <div className="rounded-3xl p-6 border border-amber-500/20 relative group overflow-hidden bg-gradient-to-r from-amber-900/10 to-transparent">
+         <h3 className="text-amber-400 text-xs font-bold mb-3 flex items-center justify-center gap-2 relative z-10 uppercase tracking-widest">
             <Star size={12} className="fill-amber-400" />
             دعاء اليوم
-            <span className="text-[9px] bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-300 border border-amber-500/20">
-               {dailyDua.category}
-            </span>
+            <Star size={12} className="fill-amber-400" />
          </h3>
-         <p className="text-base text-white font-serif leading-loose text-center mb-2 relative z-10">
+         <p className="text-xl text-white font-quran leading-[2.2] text-center mb-3 relative z-10">
             "{dailyDua.arabic}"
          </p>
-         <div className="text-center text-slate-500 text-[10px] relative z-10">
+         <div className="text-center text-slate-500 text-xs relative z-10 font-quran opacity-70">
             {dailyDua.source}
          </div>
       </div>

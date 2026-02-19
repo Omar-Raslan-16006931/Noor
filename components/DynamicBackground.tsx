@@ -9,123 +9,154 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
   sunriseTime = "06:00", 
   sunsetTime = "18:00" 
 }) => {
-  const [timeState, setTimeState] = useState({
-    percentage: 0, // 0 to 100 representing position in the day (0=sunrise, 50=noon, 100=sunset)
-    isDay: true,
-    phase: 'day' as 'dawn' | 'day' | 'dusk' | 'night'
-  });
+  const [phase, setPhase] = useState<'dawn' | 'day' | 'dusk' | 'night'>('day');
 
   useEffect(() => {
-    const calculateTime = () => {
+    const calculatePhase = () => {
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-      const [srH, srM] = sunriseTime.split(':').map(Number);
-      const [ssH, ssM] = sunsetTime.split(':').map(Number);
-      
-      const srMinutes = srH * 60 + srM;
-      const ssMinutes = ssH * 60 + ssM;
+      // Default values if time is invalid
+      let srMinutes = 6 * 60;
+      let ssMinutes = 18 * 60;
 
-      let isDay = currentMinutes >= srMinutes && currentMinutes < ssMinutes;
-      let percentage = 0;
-      let phase: 'dawn' | 'day' | 'dusk' | 'night' = 'night';
-
-      if (isDay) {
-        const totalDayMinutes = ssMinutes - srMinutes;
-        const elapsed = currentMinutes - srMinutes;
-        percentage = (elapsed / totalDayMinutes) * 100;
-
-        if (percentage < 15) phase = 'dawn';
-        else if (percentage > 85) phase = 'dusk';
-        else phase = 'day';
-      } else {
-        // Night logic
-        phase = 'night';
-        // Calculate night percentage for moon?
-        // Keep simple for now: Moon roughly opposite to sun
-        // If it's night, we can just position moon high
-        percentage = 50; 
+      if (sunriseTime && sunsetTime) {
+        const [srH, srM] = sunriseTime.split(':').map(Number);
+        const [ssH, ssM] = sunsetTime.split(':').map(Number);
+        if (!isNaN(srH)) srMinutes = srH * 60 + srM;
+        if (!isNaN(ssH)) ssMinutes = ssH * 60 + ssM;
       }
 
-      setTimeState({ percentage, isDay, phase });
+      if (currentMinutes >= srMinutes - 45 && currentMinutes < srMinutes + 45) {
+        setPhase('dawn');
+      } else if (currentMinutes >= srMinutes + 45 && currentMinutes < ssMinutes - 45) {
+        setPhase('day');
+      } else if (currentMinutes >= ssMinutes - 45 && currentMinutes < ssMinutes + 45) {
+        setPhase('dusk');
+      } else {
+        setPhase('night');
+      }
     };
 
-    const interval = setInterval(calculateTime, 1000 * 60); // Update every minute
-    calculateTime();
+    const interval = setInterval(calculatePhase, 60000);
+    calculatePhase();
     return () => clearInterval(interval);
   }, [sunriseTime, sunsetTime]);
 
-  // Styles based on phase
   const getGradient = () => {
-    switch (timeState.phase) {
+    switch (phase) {
       case 'dawn':
-        return 'from-indigo-900 via-purple-800 to-orange-400';
+        return 'bg-gradient-to-br from-indigo-900 via-purple-700 to-orange-400';
       case 'day':
-        return 'from-sky-400 via-sky-300 to-sky-100';
+        return 'bg-gradient-to-br from-sky-400 via-blue-500 to-emerald-400';
       case 'dusk':
-        return 'from-slate-900 via-purple-900 to-orange-500';
+        return 'bg-gradient-to-br from-slate-900 via-purple-900 to-amber-600';
       case 'night':
-        return 'from-slate-950 via-slate-900 to-slate-950';
+        return 'bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950';
       default:
-        return 'from-slate-900 to-slate-800';
+        return 'bg-gradient-to-br from-slate-900 to-slate-800';
     }
   };
 
-  const sunPositionBottom = timeState.isDay 
-    ? Math.sin((timeState.percentage / 100) * Math.PI) * 70 // Arc path
-    : -20; // Hidden
-
-  const sunPositionLeft = timeState.isDay 
-    ? timeState.percentage 
-    : 50;
-
   return (
-    <div className={`fixed inset-0 z-0 transition-all duration-[2000ms] bg-gradient-to-b ${getGradient()} overflow-hidden`}>
+    <div className={`fixed inset-0 z-0 transition-all duration-[5000ms] ease-in-out ${getGradient()} overflow-hidden`}>
+      <style>{`
+        @keyframes float-up {
+          0% { transform: translateY(100vh) scale(0); opacity: 0; }
+          20% { opacity: 0.6; transform: translateY(80vh) scale(1); }
+          80% { opacity: 0.6; transform: translateY(20vh) scale(1); }
+          100% { transform: translateY(-10vh) scale(0); opacity: 0; }
+        }
+        @keyframes pulse-slow {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.1); }
+        }
+        .particle {
+          position: absolute;
+          background: white;
+          border-radius: 50%;
+          opacity: 0;
+        }
+      `}</style>
+
+      {/* Pattern Overlay */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.07] mix-blend-overlay"></div>
       
-      {/* Stars (Night only) */}
-      <div className={`absolute inset-0 stars transition-opacity duration-1000 ${timeState.phase === 'night' ? 'opacity-100' : 'opacity-0'}`}></div>
+      {/* Night/Dusk Stars */}
+      {(phase === 'night' || phase === 'dusk') && (
+        <div className="absolute inset-0 transition-opacity duration-1000">
+          <div className="stars opacity-50 absolute inset-0"></div>
+          {/* Extra random twinkling stars */}
+          {[...Array(30)].map((_, i) => (
+             <div 
+               key={`star-${i}`}
+               className="particle animate-pulse"
+               style={{
+                 top: `${Math.random() * 100}%`,
+                 left: `${Math.random() * 100}%`,
+                 width: `${Math.random() * 2 + 1}px`,
+                 height: `${Math.random() * 2 + 1}px`,
+                 animationDuration: `${Math.random() * 3 + 2}s`,
+                 animationDelay: `${Math.random() * 5}s`,
+                 opacity: Math.random() * 0.5 + 0.2
+               }}
+             ></div>
+          ))}
+          {/* Moon Glow Hint (Top Right) */}
+          <div className="absolute top-10 right-10 w-32 h-32 bg-indigo-100 rounded-full blur-[80px] opacity-20"></div>
+        </div>
+      )}
 
-      {/* Sun */}
-      <div 
-        className="absolute w-24 h-24 rounded-full blur-xl bg-amber-300 transition-all duration-[2000ms] ease-linear opacity-60"
-        style={{ 
-          bottom: `${sunPositionBottom + 10}%`, 
-          left: `${sunPositionLeft}%`,
-          transform: 'translateX(-50%)',
-          display: timeState.isDay ? 'block' : 'none'
-        }}
-      ></div>
-      <div 
-        className="absolute w-16 h-16 rounded-full bg-amber-100 shadow-[0_0_60px_rgba(252,211,77,0.8)] transition-all duration-[2000ms] ease-linear"
-        style={{ 
-          bottom: `${sunPositionBottom + 10}%`, 
-          left: `${sunPositionLeft}%`,
-          transform: 'translateX(-50%)',
-          display: timeState.isDay ? 'block' : 'none'
-        }}
-      ></div>
+      {/* Day/Dawn Sun Rays */}
+      {(phase === 'day' || phase === 'dawn') && (
+         <div className="absolute inset-0 overflow-hidden transition-opacity duration-1000">
+            {/* Spinning Light Rays */}
+            <div className="absolute -top-[50%] -right-[50%] w-[200%] h-[200%] animate-[spin_120s_linear_infinite] opacity-[0.08] pointer-events-none">
+                {[0, 45, 90, 135].map((deg) => (
+                    <div 
+                        key={deg}
+                        className="absolute top-1/2 left-1/2 w-full h-40 bg-gradient-to-r from-transparent via-white to-transparent"
+                        style={{ transform: `translate(-50%, -50%) rotate(${deg}deg)` }}
+                    ></div>
+                ))}
+            </div>
+            {/* Sun Glow Hint (Top Right) */}
+            <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] opacity-40 ${phase === 'day' ? 'bg-yellow-200' : 'bg-orange-300'}`}></div>
+         </div>
+      )}
 
-      {/* Moon (Night only) */}
-      <div 
-        className={`absolute top-20 right-10 w-16 h-16 rounded-full bg-slate-100 shadow-[0_0_40px_rgba(255,255,255,0.3)] transition-all duration-1000 ${timeState.phase === 'night' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-      >
-        <div className="absolute w-full h-full rounded-full opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+      {/* Dynamic Ambient Orbs */}
+      <div className={`absolute -top-20 -left-20 w-[30rem] h-[30rem] rounded-full blur-[120px] mix-blend-screen transition-colors duration-[5000ms] ${
+          phase === 'day' ? 'bg-sky-300/30' : 
+          phase === 'dawn' ? 'bg-rose-400/30' : 
+          phase === 'dusk' ? 'bg-purple-600/30' : 
+          'bg-indigo-900/40'
+      }`}></div>
+
+      <div className={`absolute -bottom-20 -right-20 w-[35rem] h-[35rem] rounded-full blur-[120px] mix-blend-screen transition-colors duration-[5000ms] ${
+          phase === 'day' ? 'bg-emerald-300/20' : 
+          phase === 'dawn' ? 'bg-amber-400/20' : 
+          phase === 'dusk' ? 'bg-orange-600/20' : 
+          'bg-slate-800/40'
+      }`}></div>
+
+      {/* Floating Particles (Dust/Light motes) - Visible in all phases */}
+      <div className="absolute inset-0 pointer-events-none">
+          {[...Array(15)].map((_, i) => (
+             <div 
+               key={`mote-${i}`}
+               className="particle"
+               style={{
+                 left: `${Math.random() * 100}%`,
+                 width: `${Math.random() * 3 + 1}px`,
+                 height: `${Math.random() * 3 + 1}px`,
+                 animation: `float-up ${Math.random() * 15 + 20}s linear infinite`,
+                 animationDelay: `-${Math.random() * 20}s`,
+                 background: phase === 'night' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)'
+               }}
+             ></div>
+          ))}
       </div>
-
-      {/* Landscape Silhouette (Mountains/Dunes) */}
-      <div className="absolute bottom-0 left-0 right-0 h-48 md:h-64 transition-colors duration-[2000ms]">
-         {/* Back layer */}
-         <div 
-           className={`absolute bottom-0 left-0 right-0 h-full w-[120%] -ml-10 rounded-[100%] scale-150 translate-y-[40%] ${timeState.isDay ? 'bg-emerald-800/20' : 'bg-slate-900'}`}
-         ></div>
-         {/* Front layer */}
-         <div 
-           className={`absolute bottom-0 left-0 right-0 h-32 w-[120%] -ml-10 rounded-[100%] scale-125 translate-y-[30%] ${timeState.isDay ? 'bg-emerald-900/30' : 'bg-black'}`}
-         ></div>
-      </div>
-      
-      {/* Atmospheric Glow overlay */}
-      <div className={`absolute inset-0 pointer-events-none mix-blend-overlay ${timeState.isDay ? 'bg-amber-500/10' : 'bg-blue-900/20'}`}></div>
     </div>
   );
 };
