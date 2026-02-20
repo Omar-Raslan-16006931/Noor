@@ -9,6 +9,7 @@ import { TasbihCounter } from './components/TasbihCounter';
 import { Navigation } from './components/Navigation';
 import { DynamicBackground } from './components/DynamicBackground';
 import { Settings } from './components/Settings';
+import { BrandingGenerator } from './components/BrandingGenerator';
 import { InstallPrompt } from './components/InstallPrompt';
 import { supabase } from './lib/supabaseClient';
 import { storageService } from './services/storage';
@@ -392,8 +393,11 @@ const App: React.FC = () => {
              hijriAdjustment={hijriAdjustment} 
              onHijriChange={handleHijriChange} 
              prayerData={prayerData}
+             onOpenBranding={() => setActiveTab(AppTab.BRANDING)}
            />
         );
+      case AppTab.BRANDING:
+        return <BrandingGenerator />;
       default:
         return <PrayerTimesView 
            data={prayerData} 

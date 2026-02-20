@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Auth } from './Auth';
 import { Session } from '@supabase/supabase-js';
-import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart, ShieldCheck, Bell, MessageSquare, Bug, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart, ShieldCheck, Bell, MessageSquare, Bug, CheckCircle, XCircle, Loader2, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { PrayerData, Report } from '../types';
 import { notificationService } from '../services/notificationService';
@@ -13,9 +13,10 @@ interface SettingsProps {
   hijriAdjustment: number;
   onHijriChange: (val: number) => void;
   prayerData: PrayerData | null;
+  onOpenBranding: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, onHijriChange, prayerData }) => {
+export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, onHijriChange, prayerData, onOpenBranding }) => {
   const [username, setUsername] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
@@ -178,13 +179,24 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
                setShowAdminPanel(!showAdminPanel);
                if (!showAdminPanel) fetchReports();
              }}
-             className="w-full flex items-center justify-between text-amber-400 font-bold"
+             className="w-full flex items-center justify-between text-amber-400 font-bold mb-3"
            >
              <span className="flex items-center gap-2">
                <ShieldCheck size={18} />
                لوحة التحكم (Admin)
              </span>
              {showAdminPanel ? <Minus size={16} /> : <Plus size={16} />}
+           </button>
+           
+           <button 
+             onClick={onOpenBranding}
+             className="w-full flex items-center justify-between text-purple-400 font-bold border-t border-white/5 pt-3"
+           >
+             <span className="flex items-center gap-2">
+               <ImageIcon size={18} />
+               توليد شعار وهوية (Branding)
+             </span>
+             <Plus size={16} />
            </button>
 
            {showAdminPanel && (
