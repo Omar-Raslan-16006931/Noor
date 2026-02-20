@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Smartphone, Monitor, Share2, Loader2, Quote, Star, Moon } from 'lucide-react';
+import { X, Smartphone, Monitor, Download, Loader2, Quote, Star, Moon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface ShareItem {
@@ -22,6 +22,7 @@ type AspectRatio = '9:16' | '1:1';
 export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const printRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,8 +31,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const EXPORT_HEIGHT_PORTRAIT = 1920;
   const EXPORT_HEIGHT_SQUARE = 1080;
 
+  // Reset generated image when aspect ratio or item changes
   useEffect(() => {
-    if (!item || !containerRef.current) return;
+    setGeneratedImageUrl(null);
+  }, [aspectRatio, item]);
+
+  useEffect(() => {
+    if (!item || !containerRef.current || generatedImageUrl) return;
 
     const updateScale = () => {
       if (!containerRef.current) return;
@@ -50,17 +56,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
     updateScale();
     window.addEventListener('resize', updateScale);
     return () => window.removeEventListener('resize', updateScale);
-  }, [item, aspectRatio]);
+  }, [item, aspectRatio, generatedImageUrl]);
 
   if (!item) return null;
 
-  // The Easy, Basic Solution
-  const executeShare = async () => {
+  const generateImage = async () => {
     if (!printRef.current) return;
     setIsGenerating(true);
 
     try {
-      // 1. Directly capture the element as it is, no complex cloning
+      // 1. Capture the element
       const canvas = await html2canvas(printRef.current, {
         scale: 1, 
         useCORS: true,
@@ -68,43 +73,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         logging: false
       });
 
-      // 2. Convert to basic Data URL
+      // 2. Convert to Data URL (base64 string)
       const dataUrl = canvas.toDataURL('image/png');
-
-      // 3. Try to use the Native Web Share API first
-      try {
-        const response = await fetch(dataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], `noor-share-${Date.now()}.png`, { type: 'image/png' });
-
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'Noor Islamic App',
-          });
-          setIsGenerating(false);
-          return; // Stop here if native share succeeded
-        }
-      } catch (shareErr: any) {
-        if (shareErr.name === 'AbortError') {
-           setIsGenerating(false);
-           return; // User cancelled, do nothing
-        }
-        console.log("Native share blocked, using basic download fallback...");
-      }
-
-      // 4. Basic Fallback: Force an instant download to their phone gallery
-      const link = document.createElement('a');
-      link.download = `noor-share-${Date.now()}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      
+      // 3. Set the state to show the actual image
+      setGeneratedImageUrl(dataUrl);
 
     } catch (err) {
-      console.error("Total failure:", err);
-      // Removed the error popup, replaced with a helpful suggestion
-      alert('نعتذر، لم نتمكن من الحفظ. يرجى أخذ لقطة شاشة (Screenshot) بدلاً من ذلك.');
+      console.error("Image Generation Failed:", err);
+      alert('حدث خطأ أثناء تحضير الصورة. يرجى أخذ لقطة شاشة بدلاً من ذلك.');
     } finally {
       setIsGenerating(false);
     }
@@ -132,116 +109,136 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
           </button>
        </div>
        
-       <div ref={containerRef} className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0 w-full bg-slate-950/50 rounded-3xl border border-white/5">
-         <div 
-           style={{ 
-             width: EXPORT_WIDTH,
-             height: aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE,
-             transform: `scale(${scale})`,
-             transformOrigin: 'center center',
-           }}
-           className="shadow-2xl flex-shrink-0 origin-center select-none"
-         >
-            <div 
-               ref={printRef}
-               className="w-full h-full flex flex-col relative overflow-hidden text-white bg-slate-950"
-            >
-                <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
-
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
+       <div ref={containerRef} className="flex-1 flex flex-col items-center justify-center overflow-hidden relative min-h-0 w-full bg-slate-950/50 rounded-3xl border border-white/5 p-4">
+         
+         {generatedImageUrl ? (
+            // SHOW THE GENERATED IMAGE
+            <div className="flex flex-col items-center justify-center w-full h-full relative">
+                {/* The actual image tag */}
+                <img 
+                    src={generatedImageUrl} 
+                    alt="Generated Share" 
+                    className="max-h-[85%] max-w-full object-contain rounded-lg shadow-2xl border border-white/20"
+                />
                 
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
-
-                <div className="absolute inset-5 border border-white/10 rounded-[40px] pointer-events-none z-0"></div>
-                <div className="absolute inset-7 border border-emerald-500/10 rounded-[32px] pointer-events-none z-0"></div>
-
-                <div className="absolute top-8 left-8 w-24 h-24 pointer-events-none opacity-40">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
-                        <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
-                    </svg>
-                </div>
-                <div className="absolute top-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-90">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
-                        <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
-                    </svg>
-                </div>
-                <div className="absolute bottom-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-180">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
-                        <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
-                    </svg>
-                </div>
-                <div className="absolute bottom-8 left-8 w-24 h-24 pointer-events-none opacity-40 -rotate-90">
-                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
-                        <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
-                    </svg>
-                </div>
-
-                <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-12">
-                    
-                    <div className="shrink-0 mt-6">
-                        <div className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-xl">
-                            <Star size={20} className="fill-emerald-400 text-emerald-400" />
-                            <span className="text-xl font-bold text-white tracking-[0.15em] uppercase font-serif">
-                                {displayCategory}
-                            </span>
-                            <Star size={20} className="fill-emerald-400 text-emerald-400" />
-                        </div>
-                    </div>
-
-                    <div className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center relative">
-                        
-                        <div className="w-full relative py-8 px-4">
-                           <div className="absolute -top-8 -right-4 opacity-40">
-                               <Quote size={80} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
-                           </div>
-
-                           <p className={`font-quran font-bold text-white text-center drop-shadow-2xl dir-rtl px-4 leading-[1.6] ${displayText ? getTextSizeClass(displayText) : ''}`}>
-                                {displayText}
-                           </p>
-                           
-                           <div className="absolute -bottom-8 -left-4 opacity-40">
-                               <Quote size={80} className="text-emerald-400 fill-emerald-400/10" />
-                           </div>
-                        </div>
-
-                        {item.translation && (
-                            <div className="mt-8 pt-6 border-t border-white/10 w-4/5 mx-auto">
-                                <p className="text-2xl text-slate-300 font-serif italic text-center opacity-80 leading-relaxed font-light">
-                                    "{item.translation}"
-                                </p>
-                            </div>
-                        )}
-
-                        <div className="text-center space-y-2 mt-10">
-                             {displayNarrator && (
-                                <p className="text-3xl text-emerald-400 font-bold font-quran drop-shadow-lg">
-                                    {displayNarrator}
-                                </p>
-                            )}
-                            <p className="text-2xl text-slate-300 font-serif uppercase tracking-widest font-bold opacity-80">
-                                {displaySource}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="w-full shrink-0 flex items-center justify-between border-t border-white/5 pt-5 px-2 opacity-80">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg border border-white/10 transform -rotate-3">
-                                 <Moon size={20} className="text-white fill-white/20" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-2xl font-black text-white tracking-widest font-serif leading-none">NOOR</span>
-                                <span className="text-[10px] text-emerald-500 uppercase tracking-[0.4em] font-bold mt-0.5">App</span>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <span className="text-4xl font-black font-quran text-white drop-shadow-md leading-none opacity-90">نــور</span>
-                        </div>
-                    </div>
+                {/* Instruction overlay */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-emerald-600/90 text-white px-6 py-3 rounded-full backdrop-blur-md font-bold text-sm shadow-xl flex items-center gap-2 whitespace-nowrap animate-bounce">
+                    <Download size={18} />
+                    اضغط مطولاً على الصورة لحفظها أو مشاركتها
                 </div>
             </div>
-         </div>
+         ) : (
+            // SHOW THE HTML PREVIEW
+            <div 
+              style={{ 
+                width: EXPORT_WIDTH,
+                height: aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE,
+                transform: `scale(${scale})`,
+                transformOrigin: 'center center',
+              }}
+              className="shadow-2xl flex-shrink-0 origin-center select-none"
+            >
+               <div 
+                  ref={printRef}
+                  className="w-full h-full flex flex-col relative overflow-hidden text-white bg-slate-950"
+               >
+                   <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
+   
+                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
+                   
+                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+   
+                   <div className="absolute inset-5 border border-white/10 rounded-[40px] pointer-events-none z-0"></div>
+                   <div className="absolute inset-7 border border-emerald-500/10 rounded-[32px] pointer-events-none z-0"></div>
+   
+                   <div className="absolute top-8 left-8 w-24 h-24 pointer-events-none opacity-40">
+                       <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
+                           <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
+                       </svg>
+                   </div>
+                   <div className="absolute top-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-90">
+                       <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
+                           <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
+                       </svg>
+                   </div>
+                   <div className="absolute bottom-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-180">
+                       <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
+                           <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
+                       </svg>
+                   </div>
+                   <div className="absolute bottom-8 left-8 w-24 h-24 pointer-events-none opacity-40 -rotate-90">
+                       <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
+                           <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
+                       </svg>
+                   </div>
+   
+                   <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-12">
+                       
+                       <div className="shrink-0 mt-6">
+                           <div className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-xl">
+                               <Star size={20} className="fill-emerald-400 text-emerald-400" />
+                               <span className="text-xl font-bold text-white tracking-[0.15em] uppercase font-serif">
+                                   {displayCategory}
+                               </span>
+                               <Star size={20} className="fill-emerald-400 text-emerald-400" />
+                           </div>
+                       </div>
+   
+                       <div className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center relative">
+                           
+                           <div className="w-full relative py-8 px-4">
+                              <div className="absolute -top-8 -right-4 opacity-40">
+                                  <Quote size={80} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
+                              </div>
+   
+                              <p className={`font-quran font-bold text-white text-center drop-shadow-2xl dir-rtl px-4 leading-[1.6] ${displayText ? getTextSizeClass(displayText) : ''}`}>
+                                   {displayText}
+                              </p>
+                              
+                              <div className="absolute -bottom-8 -left-4 opacity-40">
+                                  <Quote size={80} className="text-emerald-400 fill-emerald-400/10" />
+                              </div>
+                           </div>
+   
+                           {item.translation && (
+                               <div className="mt-8 pt-6 border-t border-white/10 w-4/5 mx-auto">
+                                   <p className="text-2xl text-slate-300 font-serif italic text-center opacity-80 leading-relaxed font-light">
+                                       "{item.translation}"
+                                   </p>
+                               </div>
+                           )}
+   
+                           <div className="text-center space-y-2 mt-10">
+                                {displayNarrator && (
+                                   <p className="text-3xl text-emerald-400 font-bold font-quran drop-shadow-lg">
+                                       {displayNarrator}
+                                   </p>
+                               )}
+                               <p className="text-2xl text-slate-300 font-serif uppercase tracking-widest font-bold opacity-80">
+                                   {displaySource}
+                               </p>
+                           </div>
+                       </div>
+   
+                       <div className="w-full shrink-0 flex items-center justify-between border-t border-white/5 pt-5 px-2 opacity-80">
+                           <div className="flex items-center gap-3">
+                               <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg border border-white/10 transform -rotate-3">
+                                    <Moon size={20} className="text-white fill-white/20" />
+                               </div>
+                               <div className="flex flex-col">
+                                   <span className="text-2xl font-black text-white tracking-widest font-serif leading-none">NOOR</span>
+                                   <span className="text-[10px] text-emerald-500 uppercase tracking-[0.4em] font-bold mt-0.5">App</span>
+                               </div>
+                           </div>
+                           
+                           <div>
+                               <span className="text-4xl font-black font-quran text-white drop-shadow-md leading-none opacity-90">نــور</span>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+            </div>
+         )}
        </div>
 
        <div className="w-full max-w-md mx-auto mt-4 bg-slate-900/90 p-3 rounded-2xl flex items-center gap-3 border border-white/10 backdrop-blur-xl shrink-0 z-50">
@@ -266,13 +263,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
             </button>
          </div>
 
-         <button 
-           onClick={executeShare}
-           disabled={isGenerating}
-           className="px-6 bg-white text-slate-900 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-50 active:scale-95 transition-all disabled:opacity-50 h-full"
-         >
-           {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
-         </button>
+         {!generatedImageUrl && (
+             <button 
+               onClick={generateImage}
+               disabled={isGenerating}
+               className="px-6 bg-white text-slate-900 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-50 active:scale-95 transition-all disabled:opacity-50 h-full"
+             >
+               {isGenerating ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+             </button>
+         )}
        </div>
     </div>
   );
