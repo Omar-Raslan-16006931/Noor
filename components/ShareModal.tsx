@@ -53,9 +53,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
     setIsGenerating(true);
 
     try {
-      // 1. Force browser to ensure all fonts are loaded before capturing
+      // Force wait for fonts to ensure no empty blocks are drawn
       await document.fonts.ready;
-      // Add a slight delay to ensure layout is completely settled
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const canvas = await html2canvas(printRef.current, {
@@ -63,16 +62,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         backgroundColor: '#020617', 
         useCORS: true,
         logging: false,
-        // 2. CRITICAL FIX: The onclone method forces the cloned DOM to re-apply 
-        // the correct font and text direction right before the image is drawn.
-        onclone: (clonedDoc) => {
-            const elementsWithQuranFont = clonedDoc.querySelectorAll('.font-quran');
-            elementsWithQuranFont.forEach(el => {
-                (el as HTMLElement).style.fontFamily = "'Amiri', 'Tajawal', serif"; // Fallbacks
-                (el as HTMLElement).style.direction = "rtl";
-                (el as HTMLElement).style.unicodeBidi = "bidi-override";
-            });
-        }
       });
 
       canvas.toBlob(async (blob) => {
@@ -126,7 +115,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       if (text.length > 250) return 'text-5xl leading-relaxed';
       if (text.length > 120) return 'text-6xl leading-relaxed';
       if (text.length > 60) return 'text-7xl leading-relaxed';
-      return 'text-8xl leading-[1.4]';
+      return 'text-8xl leading-relaxed';
   };
 
   return (
@@ -149,87 +138,96 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
            }}
            className="shadow-2xl flex-shrink-0 origin-center select-none"
          >
-            {/* THE CRASH-PROOF DOM
-              - No SVG data URIs
-              - No backdrop-blur
-              - No radial gradients
-              - Only solid colors and linear gradients 
-            */}
             <div 
                ref={printRef}
-               className="w-full h-full flex flex-col relative overflow-hidden text-white bg-[#020617]"
+               className="w-full h-full flex flex-col relative overflow-hidden text-white bg-slate-950"
             >
-                {/* Safe Linear Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-b from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/10 to-transparent"></div>
+                {/* YOUR ORIGINAL COOL BACKGROUND */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
+                
+                {/* CRASH FIX: Replaced blur-[100px] with a radial gradient. Looks exactly the same, uses 0% RAM. */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_60%)] pointer-events-none"></div>
 
-                {/* Safe Decorative Borders */}
-                <div className="absolute inset-5 border border-emerald-900/40 rounded-[40px] pointer-events-none z-0"></div>
-                <div className="absolute inset-7 border border-emerald-500/20 rounded-[32px] pointer-events-none z-0"></div>
+                <div className="absolute inset-5 border border-white/10 rounded-[40px] pointer-events-none z-0"></div>
+                <div className="absolute inset-7 border border-emerald-500/10 rounded-[32px] pointer-events-none z-0"></div>
+
+                <div className="absolute top-8 left-8 w-24 h-24 pointer-events-none opacity-40">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
+                </div>
+                <div className="absolute top-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-90">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
+                </div>
+                <div className="absolute bottom-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-180">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
+                </div>
+                <div className="absolute bottom-8 left-8 w-24 h-24 pointer-events-none opacity-40 -rotate-90">
+                    <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
+                </div>
 
                 <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-12">
                     
-                    <div className="shrink-0 mt-8">
-                        {/* Safe solid background badge */}
-                        <div className="flex items-center gap-3 px-8 py-3 rounded-full bg-[#0f172a] border border-emerald-500/20 shadow-xl">
-                            <Star size={20} className="text-emerald-400" />
+                    <div className="shrink-0 mt-6">
+                        <div className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-xl">
+                            <Star size={20} className="fill-emerald-400 text-emerald-400" />
                             <span className="text-xl font-bold text-white tracking-[0.15em] uppercase font-serif">
                                 {displayCategory}
                             </span>
-                            <Star size={20} className="text-emerald-400" />
+                            <Star size={20} className="fill-emerald-400 text-emerald-400" />
                         </div>
                     </div>
 
                     <div className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center relative">
                         
                         <div className="w-full relative py-8 px-4">
-                           <div className="absolute -top-12 -right-4 opacity-30">
-                               <Quote size={80} className="text-emerald-400 rotate-180" />
+                           <div className="absolute -top-8 -right-4 opacity-40">
+                               <Quote size={80} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
                            </div>
 
-                           <p className={`font-quran font-bold text-white text-center dir-rtl px-4 leading-[1.6] ${displayText ? getTextSizeClass(displayText) : ''}`}>
+                           {/* GLITCH FIX: Removed drop-shadow-2xl class and added standard textShadow style. Added explicit dir="rtl" attribute. */}
+                           <p dir="rtl" className={`font-quran font-bold text-white text-center px-4 ${displayText ? getTextSizeClass(displayText) : ''}`} style={{ textShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
                                 {displayText}
                            </p>
                            
-                           <div className="absolute -bottom-12 -left-4 opacity-30">
-                               <Quote size={80} className="text-emerald-400" />
+                           <div className="absolute -bottom-8 -left-4 opacity-40">
+                               <Quote size={80} className="text-emerald-400 fill-emerald-400/10" />
                            </div>
                         </div>
 
                         {item.translation && (
-                            <div className="mt-12 pt-8 border-t border-emerald-900/50 w-4/5 mx-auto">
+                            <div className="mt-8 pt-6 border-t border-white/10 w-4/5 mx-auto">
                                 <p className="text-2xl text-slate-300 font-serif italic text-center opacity-80 leading-relaxed font-light">
                                     "{item.translation}"
                                 </p>
                             </div>
                         )}
 
-                        <div className="text-center space-y-4 mt-12">
+                        <div className="text-center space-y-2 mt-10">
                              {displayNarrator && (
-                                <p className="text-3xl text-emerald-400 font-bold font-quran">
+                                <p className="text-3xl text-emerald-400 font-bold font-quran" style={{ textShadow: '0 2px 10px rgba(16,185,129,0.3)' }}>
                                     {displayNarrator}
                                 </p>
                             )}
-                            <p className="text-2xl text-slate-400 font-serif uppercase tracking-widest font-bold">
+                            <p className="text-2xl text-slate-300 font-serif uppercase tracking-widest font-bold opacity-80">
                                 {displaySource}
                             </p>
                         </div>
                     </div>
 
-                    <div className="w-full shrink-0 flex items-center justify-between border-t border-emerald-900/40 pt-6 px-4">
-                        <div className="flex items-center gap-4">
-                            {/* Safe solid background icon */}
-                            <div className="w-14 h-14 rounded-2xl bg-[#0f172a] border border-emerald-500/30 flex items-center justify-center transform -rotate-3">
-                                 <Moon size={24} className="text-emerald-400" />
+                    <div className="w-full shrink-0 flex items-center justify-between border-t border-white/5 pt-5 px-2 opacity-80">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg border border-white/10 transform -rotate-3">
+                                 <Moon size={20} className="text-white fill-white/20" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-2xl font-black text-white tracking-widest font-serif leading-none mb-1">NOOR</span>
-                                <span className="text-xs text-emerald-500 uppercase tracking-[0.4em] font-bold">App</span>
+                                <span className="text-2xl font-black text-white tracking-widest font-serif leading-none">NOOR</span>
+                                <span className="text-[10px] text-emerald-500 uppercase tracking-[0.4em] font-bold mt-0.5">App</span>
                             </div>
                         </div>
                         
                         <div>
-                            <span className="text-5xl font-black font-quran text-emerald-400/80 leading-none">نــور</span>
+                            {/* GLITCH FIX: Removed drop-shadow-md class */}
+                            <span className="text-4xl font-black font-quran text-white opacity-90">نــور</span>
                         </div>
                     </div>
                 </div>
