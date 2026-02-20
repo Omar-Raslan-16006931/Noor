@@ -27,52 +27,56 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const EXPORT_WIDTH = 1080;
-  const EXPORT_HEIGHT_PORTRAIT = 1920;
-  const EXPORT_HEIGHT_SQUARE = 1080;
-  const exportHeight = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
+  // Capture dimensions — small enough for iOS Safari, still high quality
+  const CARD_WIDTH = 540;
+  const CARD_HEIGHT_PORTRAIT = 960;
+  const CARD_HEIGHT_SQUARE = 540;
+  const cardHeight = aspectRatio === '9:16' ? CARD_HEIGHT_PORTRAIT : CARD_HEIGHT_SQUARE;
 
-  // Generate the image automatically when the modal opens or aspect ratio changes.
-  // The printRef element is hidden off-screen with NO transforms — html2canvas captures it cleanly.
   useEffect(() => {
     if (!item || !printRef.current) return;
 
-    const generate = async () => {
-      setIsGenerating(true);
-      setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
-      setCapturedBlob(null);
+    let cancelled = false;
+    setIsGenerating(true);
+    setPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
+    setCapturedBlob(null);
 
+    const run = async () => {
       try {
         await document.fonts.ready;
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(r => setTimeout(r, 600));
 
         const canvas = await html2canvas(printRef.current!, {
-          scale: 2,
+          scale: 2, // 2x = 1080×1920 output quality from a 540×960 element
           backgroundColor: '#020617',
           useCORS: true,
           allowTaint: true,
           logging: false,
-          width: EXPORT_WIDTH,
-          height: exportHeight,
+          width: CARD_WIDTH,
+          height: cardHeight,
         });
+
+        if (cancelled) return;
 
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob(
-            b => b ? resolve(b) : reject(new Error('toBlob returned null')),
+            b => b ? resolve(b) : reject(new Error('toBlob failed')),
             'image/png'
           );
         });
 
-        setPreviewUrl(URL.createObjectURL(blob));
+        if (cancelled) return;
         setCapturedBlob(blob);
+        setPreviewUrl(URL.createObjectURL(blob));
       } catch (err) {
-        console.error('Image generation failed:', err);
+        console.error('Capture failed:', err);
       } finally {
-        setIsGenerating(false);
+        if (!cancelled) setIsGenerating(false);
       }
     };
 
-    generate();
+    run();
+    return () => { cancelled = true; };
   }, [item, aspectRatio]);
 
   useEffect(() => {
@@ -81,25 +85,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
   if (!item) return null;
 
-  // Share button just uses the already-captured blob — no re-capture, no html2canvas on press
   const handleShare = async () => {
     if (!capturedBlob) return;
     setIsSharing(true);
-
     try {
-      const file = new File([capturedBlob], `noor-share-${Date.now()}.png`, { type: 'image/png' });
-
-      const canShareFiles = (() => {
+      const file = new File([capturedBlob], `noor-${Date.now()}.png`, { type: 'image/png' });
+      const canShare = (() => {
         try { return !!(navigator.share && navigator.canShare?.({ files: [file] })); }
         catch { return false; }
       })();
 
-      if (canShareFiles) {
-        try {
-          await navigator.share({ files: [file], title: 'نور - Noor App' });
-        } catch (e: any) {
-          if (e.name !== 'AbortError') triggerDownload(capturedBlob);
-        }
+      if (canShare) {
+        try { await navigator.share({ files: [file], title: 'نور - Noor App' }); }
+        catch (e: any) { if (e.name !== 'AbortError') triggerDownload(capturedBlob); }
       } else {
         triggerDownload(capturedBlob);
       }
@@ -109,119 +107,26 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   };
 
   const triggerDownload = (blob: Blob) => {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `noor-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `noor-${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
   };
 
   const displayText = item.text || item.arabic;
   const displayCategory = item.category || item.title || 'Noor';
-  const displaySource = item.source;
   const displayNarrator = item.narrator;
+  const displaySource = item.source;
 
-  const getTextSizeClass = (text: string) => {
-    if (text.length > 250) return 'text-5xl leading-relaxed';
-    if (text.length > 120) return 'text-6xl leading-relaxed';
-    if (text.length > 60) return 'text-7xl leading-relaxed';
-    return 'text-8xl leading-[1.4]';
+  const getTextSize = (text: string) => {
+    if (text.length > 250) return { fontSize: 18 };
+    if (text.length > 120) return { fontSize: 22 };
+    if (text.length > 60)  return { fontSize: 26 };
+    return { fontSize: 30 };
   };
-
-  // The card markup — reused in both the hidden capture element and kept DRY via a component
-  const CardContent = () => (
-    <div className="w-full h-full flex flex-col relative overflow-hidden text-white bg-[#020617]">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}
-      ></div>
-
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_60%)] pointer-events-none"></div>
-      <div className="absolute inset-5 border border-white/10 rounded-[40px] pointer-events-none z-0"></div>
-      <div className="absolute inset-7 border border-emerald-500/10 rounded-[32px] pointer-events-none z-0"></div>
-
-      <div className="absolute top-8 left-8 w-24 h-24 pointer-events-none opacity-40">
-        <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
-      </div>
-      <div className="absolute top-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-90">
-        <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
-      </div>
-      <div className="absolute bottom-8 right-8 w-24 h-24 pointer-events-none opacity-40 rotate-180">
-        <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
-      </div>
-      <div className="absolute bottom-8 left-8 w-24 h-24 pointer-events-none opacity-40 -rotate-90">
-        <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
-      </div>
-
-      <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-12">
-        <div className="shrink-0 mt-6">
-          <div className="flex items-center gap-3 px-8 py-3 rounded-full bg-slate-800/90 border border-white/10 shadow-xl">
-            <Star size={20} className="fill-emerald-400 text-emerald-400" />
-            <span className="text-xl font-bold text-white tracking-[0.15em] uppercase font-serif">
-              {displayCategory}
-            </span>
-            <Star size={20} className="fill-emerald-400 text-emerald-400" />
-          </div>
-        </div>
-
-        <div className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center relative">
-          <div className="w-full relative py-8 px-4">
-            <div className="absolute -top-8 -right-4 opacity-40">
-              <Quote size={80} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
-            </div>
-            <div dir="rtl" className="w-full text-center">
-              <p
-                className={`font-quran font-bold text-white leading-[1.6] inline-block ${displayText ? getTextSizeClass(displayText) : ''}`}
-                style={{ textShadow: '0 4px 15px rgba(0,0,0,0.4)' }}
-              >
-                {displayText}
-              </p>
-            </div>
-            <div className="absolute -bottom-8 -left-4 opacity-40">
-              <Quote size={80} className="text-emerald-400 fill-emerald-400/10" />
-            </div>
-          </div>
-
-          {item.translation && (
-            <div className="mt-8 pt-6 border-t border-white/10 w-4/5 mx-auto">
-              <p className="text-2xl text-slate-300 font-serif italic text-center opacity-80 leading-relaxed font-light">
-                "{item.translation}"
-              </p>
-            </div>
-          )}
-
-          <div className="text-center space-y-2 mt-10">
-            {displayNarrator && (
-              <p className="text-3xl text-emerald-400 font-bold font-quran" style={{ textShadow: '0 2px 10px rgba(16,185,129,0.3)' }}>
-                {displayNarrator}
-              </p>
-            )}
-            <p className="text-2xl text-slate-300 font-serif uppercase tracking-widest font-bold opacity-80">
-              {displaySource}
-            </p>
-          </div>
-        </div>
-
-        <div className="w-full shrink-0 flex items-center justify-between border-t border-white/5 pt-5 px-2 opacity-80">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg border border-white/10 transform -rotate-3">
-              <Moon size={20} className="text-white fill-white/20" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-black text-white tracking-widest font-serif leading-none">NOOR</span>
-              <span className="text-[10px] text-emerald-500 uppercase tracking-[0.4em] font-bold mt-0.5">App</span>
-            </div>
-          </div>
-          <div>
-            <span className="text-4xl font-black font-quran text-white opacity-90">نــور</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 z-[200] bg-slate-950/95 backdrop-blur-md flex flex-col p-4 animate-in fade-in duration-200">
@@ -233,90 +138,156 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         </button>
       </div>
 
-      {/* PREVIEW AREA — shows the generated <img>, NOT a scaled HTML element */}
-      <div className="flex-1 flex items-center justify-center overflow-hidden relative min-h-0 w-full bg-slate-950/50 rounded-3xl border border-white/5">
-        {isGenerating ? (
+      {/* Preview: shows the generated <img> — same pixels as what gets shared */}
+      <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0 w-full bg-slate-950/50 rounded-3xl border border-white/5">
+        {isGenerating && (
           <div className="flex flex-col items-center gap-3">
-            <Loader2 size={36} className="animate-spin text-emerald-400" />
-            <p className="text-slate-400 text-sm font-medium">جاري تحضير الصورة...</p>
+            <Loader2 size={32} className="animate-spin text-emerald-400" />
+            <p className="text-slate-400 text-sm">جاري تحضير الصورة...</p>
           </div>
-        ) : previewUrl ? (
+        )}
+        {!isGenerating && previewUrl && (
           <img
             src={previewUrl}
-            alt="Share preview"
+            alt="preview"
             className="rounded-xl shadow-2xl"
-            style={{ maxHeight: 'calc(100% - 16px)', maxWidth: 'calc(100% - 16px)', objectFit: 'contain' }}
+            style={{ maxWidth: 'calc(100% - 16px)', maxHeight: 'calc(100% - 16px)', objectFit: 'contain' }}
           />
-        ) : (
-          <div className="flex flex-col items-center gap-3">
-            <p className="text-red-400 text-sm">فشل تحضير الصورة</p>
-            <button
-              onClick={() => { setIsGenerating(true); setTimeout(() => { if (item) setAspectRatio(a => a); }, 50); }}
-              className="text-emerald-400 text-sm underline"
-            >
-              حاول مجددًا
-            </button>
-          </div>
+        )}
+        {!isGenerating && !previewUrl && (
+          <p className="text-red-400 text-sm text-center px-4">
+            فشل تحضير الصورة. جرب التقاط لقطة شاشة.
+          </p>
         )}
       </div>
 
       {/*
-        HIDDEN CAPTURE TARGET — positioned off-screen, exact export size, ZERO transforms.
-        html2canvas reads this element, not the visible preview.
-        The user never sees this div — the <img> above is what they see.
+        Hidden capture target — rendered off-screen at CARD_WIDTH × cardHeight.
+        NO CSS transforms. NO scale(). html2canvas reads this directly.
       */}
       <div
         aria-hidden="true"
         style={{
           position: 'fixed',
-          top: 0,
           left: '-99999px',
-          width: EXPORT_WIDTH,
-          height: exportHeight,
-          pointerEvents: 'none',
-          zIndex: -999,
+          top: 0,
+          width: CARD_WIDTH,
+          height: cardHeight,
           overflow: 'hidden',
+          pointerEvents: 'none',
+          zIndex: -1,
         }}
       >
-        <div ref={printRef} style={{ width: '100%', height: '100%' }}>
-          <CardContent />
+        <div
+          ref={printRef}
+          style={{ width: CARD_WIDTH, height: cardHeight, position: 'relative', overflow: 'hidden', background: '#020617', display: 'flex', flexDirection: 'column', color: 'white' }}
+        >
+          {/* Background gradient */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #020617, #0f172a, #1e293b)' }} />
+
+          {/* Radial glow */}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 400, height: 400, background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 60%)', pointerEvents: 'none' }} />
+
+          {/* Outer border */}
+          <div style={{ position: 'absolute', inset: 12, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 18, border: '1px solid rgba(16,185,129,0.1)', borderRadius: 20, pointerEvents: 'none' }} />
+
+          {/* Corner SVGs */}
+          {[
+            { top: 16, left: 16, rotate: '0deg' },
+            { top: 16, right: 16, rotate: '90deg' },
+            { bottom: 16, right: 16, rotate: '180deg' },
+            { bottom: 16, left: 16, rotate: '-90deg' },
+          ].map((pos, i) => (
+            <div key={i} style={{ position: 'absolute', width: 36, height: 36, opacity: 0.4, ...pos }}>
+              <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="3" style={{ transform: `rotate(${pos.rotate})`, width: '100%', height: '100%' }}>
+                <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
+              </svg>
+            </div>
+          ))}
+
+          <div style={{ position: 'relative', zIndex: 1, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '32px 28px' }}>
+
+            {/* Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 24px', borderRadius: 100, background: 'rgba(30,41,59,0.9)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <Star size={14} fill="#34d399" color="#34d399" />
+              <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'white' }}>{displayCategory}</span>
+              <Star size={14} fill="#34d399" color="#34d399" />
+            </div>
+
+            {/* Main text */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', gap: 20, textAlign: 'center' }}>
+              <p
+                dir="rtl"
+                style={{
+                  fontFamily: 'serif',
+                  fontWeight: 700,
+                  color: 'white',
+                  lineHeight: 1.7,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                  ...getTextSize(displayText || ''),
+                }}
+              >
+                {displayText}
+              </p>
+
+              {item.translation && (
+                <p style={{ fontSize: 13, color: '#cbd5e1', fontStyle: 'italic', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 16, maxWidth: '85%', lineHeight: 1.6, opacity: 0.85 }}>
+                  "{item.translation}"
+                </p>
+              )}
+
+              <div style={{ textAlign: 'center' }}>
+                {displayNarrator && (
+                  <p style={{ fontFamily: 'serif', fontSize: 16, color: '#34d399', fontWeight: 700, marginBottom: 6 }}>{displayNarrator}</p>
+                )}
+                <p style={{ fontSize: 13, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 3, fontWeight: 700 }}>{displaySource}</p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #059669, #065f46)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Moon size={14} color="white" fill="rgba(255,255,255,0.2)" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: 'white', letterSpacing: 3 }}>NOOR</div>
+                  <div style={{ fontSize: 8, color: '#10b981', textTransform: 'uppercase', letterSpacing: 4, fontWeight: 700 }}>App</div>
+                </div>
+              </div>
+              <span style={{ fontFamily: 'serif', fontSize: 22, fontWeight: 900, color: 'white', opacity: 0.9 }}>نــور</span>
+            </div>
+
+          </div>
         </div>
       </div>
 
-      {/* BOTTOM CONTROLS */}
+      {/* Controls */}
       <div className="w-full max-w-md mx-auto mt-4 bg-slate-900/90 p-3 rounded-2xl flex items-center gap-3 border border-white/10 backdrop-blur-xl shrink-0 z-50">
         <div className="flex flex-1 bg-black/40 p-1 rounded-xl">
           <button
             onClick={() => setAspectRatio('9:16')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all ${
-              aspectRatio === '9:16' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all ${aspectRatio === '9:16' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
           >
-            <Smartphone size={16} />
-            قصة
+            <Smartphone size={16} /> قصة
           </button>
           <button
             onClick={() => setAspectRatio('1:1')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all ${
-              aspectRatio === '1:1' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
-            }`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-bold transition-all ${aspectRatio === '1:1' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'}`}
           >
-            <Monitor size={16} />
-            مربع
+            <Monitor size={16} /> مربع
           </button>
         </div>
-
         <button
           onClick={handleShare}
           disabled={isGenerating || isSharing || !capturedBlob}
           className="px-6 bg-white text-slate-900 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-50 active:scale-95 transition-all disabled:opacity-50 h-full"
         >
-          {isSharing
-            ? <Loader2 size={20} className="animate-spin text-emerald-600" />
-            : <Share2 size={20} />
-          }
+          {isSharing ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Share2 size={20} />}
         </button>
       </div>
+
     </div>
   );
 };
