@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { Auth } from './Auth';
 import { Session } from '@supabase/supabase-js';
-import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart, ShieldCheck } from 'lucide-react';
+import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart, ShieldCheck, Bell } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { PrayerData } from '../types';
+import { notificationService } from '../services/notificationService';
 
 interface SettingsProps {
   session: Session | null;
@@ -15,10 +16,14 @@ interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, onHijriChange, prayerData }) => {
   const [username, setUsername] = useState<string>('');
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
 
   useEffect(() => {
     if (session) {
       fetchProfile();
+    }
+    if ('Notification' in window) {
+      setNotifPermission(Notification.permission);
     }
   }, [session]);
 
@@ -39,6 +44,17 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
     await supabase.auth.signOut();
   };
 
+  const handleEnableNotifications = async () => {
+    const granted = await notificationService.requestPermission();
+    if (granted) {
+      setNotifPermission('granted');
+      // Trigger a test notification
+      new Notification('Noor App', { body: 'Notifications enabled successfully!', icon: '/icon.png' });
+    } else {
+      setNotifPermission('denied');
+    }
+  };
+
   return (
     <div className="pt-6 space-y-6 px-4">
       <div className="flex items-center gap-3 mb-2">
@@ -46,6 +62,41 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
             <SettingsIcon size={20} />
          </div>
          <h2 className="text-2xl font-bold text-white">الإعدادات</h2>
+      </div>
+
+      {/* Notifications Section */}
+      <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-gradient-to-br from-indigo-900/20 to-transparent relative overflow-hidden">
+          <div className="absolute -right-6 -bottom-6 opacity-5 rotate-12">
+             <Bell size={120} />
+          </div>
+          
+          <div className="relative z-10">
+             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <Bell size={18} className="text-indigo-400" />
+                التنبيهات
+             </h3>
+             <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+                تفعيل تنبيهات أوقات الصلاة والأذكار اليومية. (يتطلب إضافة التطبيق للشاشة الرئيسية في iOS)
+             </p>
+             
+             <button 
+               onClick={handleEnableNotifications}
+               disabled={notifPermission === 'granted'}
+               className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 text-sm font-bold ${
+                 notifPermission === 'granted' 
+                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 cursor-default' 
+                   : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20'
+               }`}
+             >
+               <Bell size={16} className={notifPermission === 'granted' ? "fill-emerald-400" : "fill-white"} />
+               {notifPermission === 'granted' ? 'التنبيهات مفعلة' : 'تفعيل التنبيهات'}
+             </button>
+             {notifPermission === 'denied' && (
+               <p className="text-[10px] text-red-400 mt-2 text-center">
+                 تم رفض الإذن. يرجى تفعيله من إعدادات المتصفح.
+               </p>
+             )}
+          </div>
       </div>
 
       {/* Free & No Ads Banner */}

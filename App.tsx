@@ -12,6 +12,7 @@ import { Settings } from './components/Settings';
 import { InstallPrompt } from './components/InstallPrompt';
 import { supabase } from './lib/supabaseClient';
 import { storageService } from './services/storage';
+import { notificationService } from './services/notificationService';
 import { AppTab, PrayerData } from './types';
 import { Loader2, AlertTriangle, Heart } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
@@ -187,7 +188,22 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // 2. Request Precise GPS
+  // 2. Notification Service Init
+  useEffect(() => {
+    notificationService.registerSW();
+    
+    // Check notifications every minute
+    const interval = setInterval(() => {
+      notificationService.checkNotifications(prayerData);
+    }, 60000);
+    
+    // Initial check
+    notificationService.checkNotifications(prayerData);
+
+    return () => clearInterval(interval);
+  }, [prayerData]);
+
+  // 3. Request Precise GPS
   const requestGPS = () => {
     if (!navigator.geolocation) {
       alert('جهازك لا يدعم تحديد الموقع الجغرافي');

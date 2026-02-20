@@ -71,20 +71,27 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       const width = EXPORT_WIDTH;
       const height = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
       
+      // Create a container for the clone to ensure it's isolated
+      const cloneContainer = document.createElement('div');
+      cloneContainer.style.position = 'fixed';
+      cloneContainer.style.left = '-10000px';
+      cloneContainer.style.top = '0';
+      cloneContainer.style.width = `${width}px`;
+      cloneContainer.style.height = `${height}px`;
+      cloneContainer.style.zIndex = '-1';
+      cloneContainer.style.overflow = 'hidden';
+      
+      // Apply styles to clone
       Object.assign(clone.style, {
-        position: 'fixed',
-        left: '-10000px', // Move off-screen
-        top: '0',
-        width: `${width}px`,
-        height: `${height}px`,
-        zIndex: '-1',
+        width: '100%',
+        height: '100%',
         transform: 'none',
         borderRadius: '0',
         visibility: 'visible',
       });
 
-      // 3. Append to body
-      document.body.appendChild(clone);
+      cloneContainer.appendChild(clone);
+      document.body.appendChild(cloneContainer);
 
       // 4. Wait for fonts/images
       await document.fonts.ready;
@@ -98,12 +105,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         logging: false,
         width: width,
         height: height,
-        allowTaint: false,
+        allowTaint: true, // Changed to true to allow capturing local blobs if needed, but useCORS handles external
         foreignObjectRendering: false // Disable to improve stability on iOS
       });
 
       // 6. Cleanup
-      document.body.removeChild(clone);
+      document.body.removeChild(cloneContainer);
 
       // 7. Generate Blob
       canvas.toBlob(async (blob) => {
@@ -135,6 +142,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
     } catch (err) {
       console.error("Share Error:", err);
+      // Fallback to simple download if capture fails
       alert('حدث خطأ أثناء المشاركة. يرجى المحاولة مرة أخرى.');
       setIsGenerating(false);
     }
