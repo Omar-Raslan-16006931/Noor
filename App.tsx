@@ -511,7 +511,7 @@ const App: React.FC = () => {
                    <span>Made for the Ummah</span>
                    <Heart size={10} className="fill-white text-white" />
                 </div>
-                <p className="text-[9px] text-slate-500 font-mono text-center">Noor App v1.5.6 beta</p>
+                <p className="text-[9px] text-slate-500 font-mono text-center">Noor App v1.5.7 beta</p>
             </div>
           </div>
         </div>
