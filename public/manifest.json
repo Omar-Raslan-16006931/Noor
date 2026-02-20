@@ -1,19 +1,18 @@
 {
-  "name": "Noor Islamic Assistant",
+  "name": "Noor App",
   "short_name": "Noor",
-  "description": "A comprehensive spiritual assistant providing precise prayer times, Qibla direction, and AI-powered Islamic guidance.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2319/2319870.png",
+      "src": "/icon.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2319/2319870.png",
+      "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png"
     }
