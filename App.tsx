@@ -5,6 +5,7 @@ import { QiblaCompass } from './components/QiblaCompass';
 import { Journal } from './components/Journal';
 import { QuranTracker } from './components/QuranTracker';
 import { HadithView } from './components/HadithView';
+import { TasbihCounter } from './components/TasbihCounter';
 import { Navigation } from './components/Navigation';
 import { DynamicBackground } from './components/DynamicBackground';
 import { Settings } from './components/Settings';
@@ -14,7 +15,6 @@ import { storageService } from './services/storage';
 import { AppTab, PrayerData } from './types';
 import { Loader2, AlertTriangle, Heart } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
-import { Analytics } from '@vercel/analytics/react';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -311,6 +311,8 @@ const App: React.FC = () => {
         return <QuranTracker />;
       case AppTab.HADITH:
         return <HadithView />;
+      case AppTab.TASBIH:
+        return <TasbihCounter />;
       case AppTab.SETTINGS:
         return (
            <Settings 
@@ -399,7 +401,6 @@ const App: React.FC = () => {
 
         <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
       </main>
-      <Analytics />
     </div>
   );
 };

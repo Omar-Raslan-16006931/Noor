@@ -109,5 +109,6 @@ export enum AppTab {
   HADITH = 'HADITH',
   JOURNAL = 'JOURNAL',
   QIBLA = 'QIBLA',
+  TASBIH = 'TASBIH',
   SETTINGS = 'SETTINGS'
 }

@@ -62,93 +62,92 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
     if (!printRef.current) return;
     setIsGenerating(true);
 
-    let clone: HTMLElement | null = null;
-
     try {
-      // Small delay to allow UI to settle
-      await new Promise(resolve => setTimeout(resolve, 150));
-
+      // 1. Clone the element
+      const original = printRef.current;
+      const clone = original.cloneNode(true) as HTMLElement;
+      
+      // 2. Configure the clone for capture
       const width = EXPORT_WIDTH;
       const height = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
-
-      const original = printRef.current;
-      clone = original.cloneNode(true) as HTMLElement;
-
-      // Setup clone for capture - Force specific dimensions and styling
+      
       Object.assign(clone.style, {
         position: 'fixed',
+        left: '-10000px', // Move off-screen
         top: '0',
-        left: '0',
         width: `${width}px`,
         height: `${height}px`,
-        zIndex: '-9999',
+        zIndex: '-1',
         transform: 'none',
         borderRadius: '0',
-        margin: '0',
-        pointerEvents: 'none',
-        visibility: 'visible', 
-        display: 'flex'
+        visibility: 'visible',
       });
 
+      // 3. Append to body
       document.body.appendChild(clone);
-      
-      // Wait for DOM to settle and images/fonts to potentially load in the clone
-      await new Promise(resolve => setTimeout(resolve, 300));
 
+      // 4. Wait for fonts/images
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 800)); // Increased timeout for safety
+
+      // 5. Capture
       const canvas = await html2canvas(clone, {
-        scale: 1, // CRITICAL: Force 1:1 scale. Default uses devicePixelRatio (e.g. 3x on iPhone) which causes memory crash at 1080p.
-        backgroundColor: '#020617',
+        scale: 1,
         useCORS: true,
+        backgroundColor: '#020617', // Match the app background
         logging: false,
         width: width,
         height: height,
-        scrollX: 0,
-        scrollY: 0,
-        x: 0,
-        y: 0,
-        allowTaint: false, // Security: Must be false to use toBlob
+        allowTaint: false,
         foreignObjectRendering: false // Disable to improve stability on iOS
       });
 
-      if (clone && document.body.contains(clone)) {
-        document.body.removeChild(clone);
-        clone = null;
-      }
+      // 6. Cleanup
+      document.body.removeChild(clone);
 
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png', 0.9));
+      // 7. Generate Blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+            throw new Error('Image generation failed');
+        }
 
-      if (!blob) throw new Error('Failed to generate image blob');
-
-      const file = new File([blob], 'noor-share.png', { type: 'image/png' });
-      const shareData = {
-        files: [file],
-        title: 'Noor App',
-        text: 'Shared from Noor' 
-      };
-
-      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback for desktop or non-supported browsers
-        const link = document.createElement('a');
-        link.download = 'noor-share.png';
-        link.href = URL.createObjectURL(blob);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-      }
+        const file = new File([blob], 'noor-share.png', { type: 'image/png' });
+        
+        // 8. Share or Download
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    files: [file],
+                    title: 'Noor Islamic App',
+                    text: 'Shared from Noor App'
+                });
+            } catch (shareError) {
+                if ((shareError as Error).name !== 'AbortError') {
+                    console.error('Share failed, falling back to download', shareError);
+                    downloadImage(blob);
+                }
+            }
+        } else {
+            downloadImage(blob);
+        }
+        setIsGenerating(false);
+      }, 'image/png', 1.0);
 
     } catch (err) {
-      if (clone && document.body.contains(clone)) {
-        document.body.removeChild(clone);
-      }
-      console.error("Share generation failed", err);
-      // More friendly error message
-      alert('نعتذر، حدث خطأ أثناء إنشاء الصورة. يرجى المحاولة مرة أخرى.');
-    } finally {
+      console.error("Share Error:", err);
+      alert('حدث خطأ أثناء المشاركة. يرجى المحاولة مرة أخرى.');
       setIsGenerating(false);
     }
+  };
+
+  const downloadImage = (blob: Blob) => {
+      const link = document.createElement('a');
+      link.download = `noor-share-${Date.now()}.png`;
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
   };
 
   const displayText = item.text || item.arabic;
