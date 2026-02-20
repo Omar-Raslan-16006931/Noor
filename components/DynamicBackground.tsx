@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 interface DynamicBackgroundProps {
   fajrTime?: string; // HH:MM
@@ -69,6 +68,20 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
     return () => clearInterval(interval);
   }, [fajrTime, sunriseTime, maghribTime]);
 
+  // Generate static star properties once per session
+  const stars = useMemo(() => {
+    return [...Array(40)].map((_, i) => ({
+      id: `star-${i}`,
+      top: `${Math.random() * 60}%`,
+      left: `${Math.random() * 100}%`,
+      width: `${Math.random() * 2 + 1}px`,
+      height: `${Math.random() * 2 + 1}px`,
+      opacity: Math.random() * 0.7 + 0.3,
+      animationDuration: `${Math.random() * 3 + 2}s`,
+      animationDelay: `${Math.random() * 2}s`
+    }));
+  }, []);
+
   // Visual Configuration
   const isMaghrib = phase === 'maghrib';
   const isSunrise = phase === 'sunrise';
@@ -94,8 +107,8 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
           50% { transform: translateY(-20px) translateX(10px); }
         }
         @keyframes drift {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(100vw); }
+          from { transform: translateX(-150vw); }
+          to { transform: translateX(150vw); }
         }
         @keyframes twinkle {
           0%, 100% { opacity: 0.3; transform: scale(0.8); }
@@ -119,23 +132,23 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
       
       {/* 4. Stars (Night & Maghrib) */}
       <div className={`absolute inset-0 z-0 transition-opacity duration-[3000ms] ${isNight || isMaghrib ? 'opacity-100' : 'opacity-0'}`}>
-          {[...Array(40)].map((_, i) => (
+          {stars.map((star) => (
              <div 
-               key={`star-${i}`}
+               key={star.id}
                className="absolute rounded-full bg-white shadow-[0_0_2px_#fff]"
                style={{
-                 top: `${Math.random() * 60}%`, // Mostly top half
-                 left: `${Math.random() * 100}%`,
-                 width: `${Math.random() * 2 + 1}px`,
-                 height: `${Math.random() * 2 + 1}px`,
-                 opacity: Math.random() * 0.7 + 0.3,
-                 animation: `twinkle ${Math.random() * 3 + 2}s infinite ease-in-out`,
-                 animationDelay: `${Math.random() * 2}s`
+                 top: star.top,
+                 left: star.left,
+                 width: star.width,
+                 height: star.height,
+                 opacity: star.opacity,
+                 animation: `twinkle ${star.animationDuration} infinite ease-in-out`,
+                 animationDelay: star.animationDelay
                }}
              ></div>
           ))}
           {/* Moon for Night */}
-          <div className={`absolute top-12 right-8 w-24 h-24 rounded-full bg-slate-100 shadow-[0_0_50px_rgba(255,255,255,0.3)] opacity-90 transition-transform duration-[5000ms] ${isNight ? 'translate-y-0' : '-translate-y-40'}`}>
+          <div className={`absolute top-12 right-8 w-24 h-24 rounded-full bg-slate-100 shadow-[0_0_60px_rgba(255,255,255,0.4)] opacity-90 blur-[2px] transition-transform duration-[5000ms] ${isNight ? 'translate-y-0' : '-translate-y-40'}`}>
                 <div className="absolute w-full h-full rounded-full bg-slate-200 opacity-20" style={{ transform: 'translateX(-4px)' }}></div>
           </div>
       </div>
@@ -150,10 +163,31 @@ export const DynamicBackground: React.FC<DynamicBackgroundProps> = ({
         }}
       ></div>
 
-      {/* 6. Clouds (Drifting) */}
-      <div className={`absolute inset-0 pointer-events-none transition-opacity duration-[5000ms] ${!isNight ? 'opacity-40' : 'opacity-0'}`}>
-          <div className="absolute top-[10%] w-64 h-12 bg-white/20 rounded-full blur-2xl animate-[drift_60s_linear_infinite]"></div>
-          <div className="absolute top-[25%] w-96 h-16 bg-white/10 rounded-full blur-3xl animate-[drift_80s_linear_infinite_reverse]" style={{ animationDelay: '-10s' }}></div>
+    {/* 6. Clouds (Fewer, Slower, and Blurrier - with Night Mode) */}
+      <div className="absolute inset-0 pointer-events-none">
+          
+          {/* Cloud 1 - Midground (Visible Day & Faint at Night) */}
+          <div className={`absolute top-[15%] animate-[drift_150s_linear_infinite] transition-opacity duration-[5000ms] ${isNight ? 'opacity-10' : 'opacity-100'}`} style={{ animationDelay: '-10s' }}>
+              <svg viewBox="0 0 24 24" className="w-32 h-auto fill-white/20 blur-[4px]"><path d="M17.5 19c2.485 0 4.5-2.015 4.5-4.5 0-2.31-1.748-4.217-4.004-4.46A6.98 6.98 0 0011 4a6.98 6.98 0 00-6.996 6.04A4.5 4.5 0 005.5 19h12z"/></svg>
+          </div>
+
+          {/* Cloud 2 - Background (Largest, Slowest - Visible Day & Faint at Night) */}
+          <div className={`absolute top-[25%] animate-[drift_200s_linear_infinite] transition-opacity duration-[5000ms] ${isNight ? 'opacity-10' : 'opacity-100'}`} style={{ animationDelay: '-60s' }}>
+              <svg viewBox="0 0 24 24" className="w-48 h-auto fill-white/10 blur-[6px]"><path d="M17.5 19c2.485 0 4.5-2.015 4.5-4.5 0-2.31-1.748-4.217-4.004-4.46A6.98 6.98 0 0011 4a6.98 6.98 0 00-6.996 6.04A4.5 4.5 0 005.5 19h12z"/></svg>
+          </div>
+
+          {/* Cloud 3 - Foreground (Smallest, Fastest - Hides completely at Night) */}
+          <div className={`absolute top-[10%] animate-[drift_110s_linear_infinite] transition-opacity duration-[5000ms] ${isNight ? 'opacity-0' : 'opacity-100'}`} style={{ animationDelay: '-30s' }}>
+              <svg viewBox="0 0 24 24" className="w-24 h-auto fill-white/30 blur-[3px]"><path d="M17.5 19c2.485 0 4.5-2.015 4.5-4.5 0-2.31-1.748-4.217-4.004-4.46A6.98 6.98 0 0011 4a6.98 6.98 0 00-6.996 6.04A4.5 4.5 0 005.5 19h12z"/></svg>
+          </div>
+
+          {/* Cloud 4 - Lower Midground (Hides completely at Night) */}
+          <div className={`absolute top-[35%] animate-[drift_180s_linear_infinite] transition-opacity duration-[5000ms] ${isNight ? 'opacity-0' : 'opacity-100'}`} style={{ animationDelay: '-90s' }}>
+              <svg viewBox="0 0 24 24" className="w-28 h-auto fill-white/15 blur-[5px]"><path d="M17.5 19c2.485 0 4.5-2.015 4.5-4.5 0-2.31-1.748-4.217-4.004-4.46A6.98 6.98 0 0011 4a6.98 6.98 0 00-6.996 6.04A4.5 4.5 0 005.5 19h12z"/></svg>
+          </div>
+          
+      
+          
       </div>
 
       {/* 7. Ambient Atmosphere Glows */}

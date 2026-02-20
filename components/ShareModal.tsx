@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Smartphone, Monitor, Share2, Loader2, Quote, Sparkles, Star, Moon } from 'lucide-react';
+import { X, Smartphone, Monitor, Share2, Loader2, Quote, Star, Moon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface ShareItem {
@@ -27,7 +26,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const printRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // High Quality Export (1080p)
   const EXPORT_WIDTH = 1080;
   const EXPORT_HEIGHT_PORTRAIT = 1920;
   const EXPORT_HEIGHT_SQUARE = 1080;
@@ -40,14 +38,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       const containerWidth = containerRef.current.clientWidth;
       const containerHeight = containerRef.current.clientHeight;
       
-      // Target dimensions for preview scaling
       const targetWidth = EXPORT_WIDTH;
       const targetHeight = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
       
       const scaleX = (containerWidth - 32) / targetWidth;
       const scaleY = (containerHeight - 32) / targetHeight;
       
-      // Use a slightly smaller scale to ensure it fits well within the view
       setScale(Math.min(scaleX, scaleY, 0.45)); 
     };
 
@@ -63,15 +59,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
     setIsGenerating(true);
 
     try {
-      // 1. Clone the element
       const original = printRef.current;
       const clone = original.cloneNode(true) as HTMLElement;
       
-      // 2. Configure the clone for capture
       const width = EXPORT_WIDTH;
       const height = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
       
-      // Create a container for the clone to ensure it's isolated
       const cloneContainer = document.createElement('div');
       cloneContainer.style.position = 'fixed';
       cloneContainer.style.left = '-10000px';
@@ -81,7 +74,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       cloneContainer.style.zIndex = '-1';
       cloneContainer.style.overflow = 'hidden';
       
-      // Apply styles to clone
       Object.assign(clone.style, {
         width: '100%',
         height: '100%',
@@ -93,40 +85,38 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       cloneContainer.appendChild(clone);
       document.body.appendChild(cloneContainer);
 
-      // 4. Wait for fonts/images
       await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 800)); // Increased timeout for safety
+      await new Promise(resolve => setTimeout(resolve, 800)); 
 
-      // 5. Capture
       const canvas = await html2canvas(clone, {
         scale: 1,
         useCORS: true,
-        backgroundColor: '#020617', // Match the app background
+        backgroundColor: '#020617', 
         logging: false,
         width: width,
         height: height,
-        allowTaint: true, // Changed to true to allow capturing local blobs if needed, but useCORS handles external
-        foreignObjectRendering: false // Disable to improve stability on iOS
+        allowTaint: true, 
+        foreignObjectRendering: false 
       });
 
-      // 6. Cleanup
       document.body.removeChild(cloneContainer);
 
-      // 7. Generate Blob
       canvas.toBlob(async (blob) => {
         if (!blob) {
             throw new Error('Image generation failed');
         }
 
-        const file = new File([blob], 'noor-share.png', { type: 'image/png' });
+        const filename = `noor-share-${Date.now()}.png`;
+        const file = new File([blob], filename, { 
+            type: 'image/png',
+            lastModified: Date.now() 
+        });
         
-        // 8. Share or Download
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
             try {
                 await navigator.share({
                     files: [file],
                     title: 'Noor Islamic App',
-                    text: 'Shared from Noor App'
                 });
             } catch (shareError) {
                 if ((shareError as Error).name !== 'AbortError') {
@@ -137,12 +127,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
         } else {
             downloadImage(blob);
         }
+
         setIsGenerating(false);
       }, 'image/png', 1.0);
 
     } catch (err) {
       console.error("Share Error:", err);
-      // Fallback to simple download if capture fails
       alert('حدث خطأ أثناء المشاركة. يرجى المحاولة مرة أخرى.');
       setIsGenerating(false);
     }
@@ -163,7 +153,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const displaySource = item.source;
   const displayNarrator = item.narrator;
   
-  // Dynamic font sizing - Updated for 1080p
   const getTextSizeClass = (text: string) => {
       if (text.length > 250) return 'text-5xl leading-relaxed';
       if (text.length > 120) return 'text-6xl leading-relaxed';
@@ -195,21 +184,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                ref={printRef}
                className="w-full h-full flex flex-col relative overflow-hidden text-white bg-slate-950"
             >
-                {/* --- Background Effects --- */}
-                {/* Gradient Background */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
 
-                {/* Pattern */}
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
                 
-                {/* Central Glow */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
 
-                {/* Inner Decorative Frame */}
                 <div className="absolute inset-5 border border-white/10 rounded-[40px] pointer-events-none z-0"></div>
                 <div className="absolute inset-7 border border-emerald-500/10 rounded-[32px] pointer-events-none z-0"></div>
 
-                {/* Corner Ornaments */}
                 <div className="absolute top-8 left-8 w-24 h-24 pointer-events-none opacity-40">
                     <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5">
                         <path d="M2 30 V 10 Q 2 2 10 2 H 30" />
@@ -231,10 +214,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                     </svg>
                 </div>
 
-                {/* --- Content --- */}
                 <div className="relative z-10 w-full h-full flex flex-col items-center justify-between p-12">
                     
-                    {/* Header - Large Category */}
                     <div className="shrink-0 mt-6">
                         <div className="flex items-center gap-3 px-8 py-3 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl shadow-xl">
                             <Star size={20} className="fill-emerald-400 text-emerald-400" />
@@ -245,12 +226,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Main Text Body */}
                     <div className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center relative">
                         
-                        {/* Text Container with Bracket Quotes */}
                         <div className="w-full relative py-8 px-4">
-                           {/* Right Up Quote */}
                            <div className="absolute -top-8 -right-4 opacity-40">
                                <Quote size={80} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
                            </div>
@@ -259,7 +237,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                                 {displayText}
                            </p>
                            
-                           {/* Left Lower Quote */}
                            <div className="absolute -bottom-8 -left-4 opacity-40">
                                <Quote size={80} className="text-emerald-400 fill-emerald-400/10" />
                            </div>
@@ -273,7 +250,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                             </div>
                         )}
 
-                        {/* Source & Narrator */}
                         <div className="text-center space-y-2 mt-10">
                              {displayNarrator && (
                                 <p className="text-3xl text-emerald-400 font-bold font-quran drop-shadow-lg">
@@ -286,7 +262,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                         </div>
                     </div>
 
-                    {/* Footer Branding */}
                     <div className="w-full shrink-0 flex items-center justify-between border-t border-white/5 pt-5 px-2 opacity-80">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-800 flex items-center justify-center shadow-lg border border-white/10 transform -rotate-3">
@@ -307,7 +282,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
          </div>
        </div>
 
-       {/* Controls */}
        <div className="w-full max-w-md mx-auto mt-4 bg-slate-900/90 p-3 rounded-2xl flex items-center gap-3 border border-white/10 backdrop-blur-xl shrink-0 z-50">
          <div className="flex flex-1 bg-black/40 p-1 rounded-xl">
             <button 

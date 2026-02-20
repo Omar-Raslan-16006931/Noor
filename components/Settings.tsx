@@ -1,11 +1,9 @@
-
 import React, { useEffect, useState } from 'react';
 import { Auth } from './Auth';
 import { Session } from '@supabase/supabase-js';
-import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart, ShieldCheck, Bell, MessageSquare, Bug, CheckCircle, XCircle, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Moon, Calendar, LogOut, Info, Settings as SettingsIcon, Database, User, Minus, Plus, Heart, ShieldCheck, MessageSquare, Bug, CheckCircle, XCircle, Loader2, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 import { PrayerData, Report } from '../types';
-import { notificationService } from '../services/notificationService';
 import { reportService } from '../services/reportService';
 
 interface SettingsProps {
@@ -18,10 +16,9 @@ interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, onHijriChange, prayerData, onOpenBranding }) => {
   const [username, setUsername] = useState<string>('');
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission>('default');
-  const [prayerNotifEnabled, setPrayerNotifEnabled] = useState(true);
-  const [hadithNotifEnabled, setHadithNotifEnabled] = useState(true);
   
   // Report State
   const [showReportForm, setShowReportForm] = useState(false);
@@ -29,7 +26,6 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
   const [reportMessage, setReportMessage] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
-  const [isTestingNotification, setIsTestingNotification] = useState(false);
 
   // Admin State
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -40,104 +36,34 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
     if (session) {
       fetchProfile();
     }
-    if ('Notification' in window) {
-      setNotifPermission(Notification.permission);
-    }
-    
-    // Load preferences
-    const prefs = notificationService.getPreferences();
-    setPrayerNotifEnabled(prefs.prayers);
-    setHadithNotifEnabled(prefs.hadith);
   }, [session]);
 
   const fetchProfile = async () => {
     if (!session) return;
-    const { data } = await supabase
+    
+    // Attempt to fetch standard profile data along with first_name and last_name
+    const { data, error } = await supabase
       .from('profiles')
-      .select('username, is_admin')
+      .select('username, is_admin, first_name, last_name')
       .eq('id', session.user.id)
       .single();
     
-    if (data) {
-      setUsername(data.username);
+    if (data && !error) {
+      setUsername(data.username || '');
       setIsAdmin(data.is_admin || false);
+      
+      // Use database fields, or fallback to auth metadata (e.g. from Google Provider)
+      setFirstName(data.first_name || session.user.user_metadata?.first_name || session.user.user_metadata?.full_name?.split(' ')[0] || '');
+      setLastName(data.last_name || session.user.user_metadata?.last_name || session.user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '');
+    } else if (session.user.user_metadata) {
+       // Fallback if profiles table row doesn't exist or lacks columns yet
+       setFirstName(session.user.user_metadata.first_name || session.user.user_metadata.full_name?.split(' ')[0] || '');
+       setLastName(session.user.user_metadata.last_name || session.user.user_metadata.full_name?.split(' ').slice(1).join(' ') || '');
     }
   };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-  };
-
-  const handleEnableNotifications = async () => {
-    const granted = await notificationService.requestPermission();
-    if (granted) {
-      setNotifPermission('granted');
-      // Trigger a test notification
-      new Notification('تطبيق نور', { body: 'تم تفعيل التنبيهات بنجاح!', icon: '/icon.png', dir: 'rtl', lang: 'ar' });
-    } else {
-      setNotifPermission('denied');
-    }
-  };
-
-  const togglePrayerNotif = async () => {
-    const newValue = !prayerNotifEnabled;
-    setPrayerNotifEnabled(newValue);
-    notificationService.setPreferences(newValue, hadithNotifEnabled);
-    
-    // Sync to Cloud
-    if (session) {
-        const userData = await storageService.getUserData();
-        await storageService.saveUserData({
-            ...userData,
-            settings: {
-                ...userData.settings,
-                notifications: {
-                    prayers: newValue,
-                    hadith: hadithNotifEnabled
-                }
-            }
-        });
-    }
-  };
-
-  const toggleHadithNotif = async () => {
-    const newValue = !hadithNotifEnabled;
-    setHadithNotifEnabled(newValue);
-    notificationService.setPreferences(prayerNotifEnabled, newValue);
-
-    // Sync to Cloud
-    if (session) {
-        const userData = await storageService.getUserData();
-        await storageService.saveUserData({
-            ...userData,
-            settings: {
-                ...userData.settings,
-                notifications: {
-                    prayers: prayerNotifEnabled,
-                    hadith: newValue
-                }
-            }
-        });
-    }
-  };
-
-  const handleTestNotification = () => {
-    if (notifPermission !== 'granted') {
-      alert('يرجى تفعيل التنبيهات أولاً');
-      return;
-    }
-
-    setIsTestingNotification(true);
-    
-    setTimeout(() => {
-      new Notification('تطبيق نور', { 
-        body: 'هذا اختبار للتنبيهات بعد 10 ثواني', 
-        icon: '/icon.png', 
-        dir: 'rtl', 
-        lang: 'ar' 
-      });
-      setIsTestingNotification(false);
-    }, 10000);
   };
 
   const handleSubmitReport = async (e: React.FormEvent) => {
@@ -181,6 +107,10 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
       console.error('Error toggling status:', error);
     }
   };
+
+  // Construct display name and initial based on available user info
+  const displayName = [firstName, lastName].filter(Boolean).join(' ') || username || 'مستخدم';
+  const displayInitial = firstName ? firstName[0] : (username ? username[0] : session?.user.email?.[0]);
 
   return (
     <div className="pt-6 space-y-6 px-4">
@@ -325,7 +255,7 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
                      type="submit"
                      disabled={isSubmittingReport || !reportMessage.trim()}
                      className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
-                   >
+                     >
                      {isSubmittingReport ? <Loader2 size={14} className="animate-spin" /> : 'إرسال'}
                    </button>
                  </form>
@@ -334,86 +264,6 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
            )}
         </div>
       )}
-
-      {/* Notifications Section */}
-      <div className="glass-panel p-4 rounded-2xl border border-white/5 bg-gradient-to-br from-indigo-900/20 to-transparent relative overflow-hidden">
-          <div className="absolute -right-6 -bottom-6 opacity-5 rotate-12">
-             <Bell size={80} />
-          </div>
-          
-          <div className="relative z-10">
-             <h3 className="text-base font-bold text-white mb-2 flex items-center gap-2">
-                <Bell size={16} className="text-indigo-400" />
-                التنبيهات
-             </h3>
-             <p className="text-[10px] text-slate-400 mb-3 leading-relaxed">
-                تفعيل تنبيهات أوقات الصلاة والأذكار اليومية. (يتطلب إضافة التطبيق للشاشة الرئيسية في iOS)
-             </p>
-             
-             {notifPermission === 'granted' ? (
-               <div className="space-y-2 mb-2">
-                 <div className="flex items-center justify-between bg-black/20 p-2.5 rounded-xl border border-white/5">
-                   <span className="text-xs text-white">تنبيهات الصلاة</span>
-                   <button 
-                     onClick={togglePrayerNotif}
-                     className={`w-8 h-5 rounded-full transition-colors relative ${prayerNotifEnabled ? 'bg-emerald-500' : 'bg-slate-700'}`}
-                   >
-                     <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${prayerNotifEnabled ? 'left-1' : 'left-4'}`} />
-                   </button>
-                 </div>
-                 
-                 <div className="flex items-center justify-between bg-black/20 p-2.5 rounded-xl border border-white/5">
-                   <span className="text-xs text-white">أذكار وأحاديث</span>
-                   <button 
-                     onClick={toggleHadithNotif}
-                     className={`w-8 h-5 rounded-full transition-colors relative ${hadithNotifEnabled ? 'bg-emerald-500' : 'bg-slate-700'}`}
-                   >
-                     <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${hadithNotifEnabled ? 'left-1' : 'left-4'}`} />
-                   </button>
-                 </div>
-
-                 <button 
-                   onClick={handleTestNotification}
-                   disabled={isTestingNotification}
-                   className="w-full mt-2 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 text-xs font-bold bg-slate-700 hover:bg-slate-600 text-white shadow-slate-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                 >
-                   {isTestingNotification ? (
-                     <>
-                       <Loader2 size={14} className="animate-spin" />
-                       جاري الانتظار 10 ثواني...
-                     </>
-                   ) : (
-                     <>
-                       <Bell size={14} />
-                       تجربة التنبيه (بعد 10 ثواني)
-                     </>
-                   )}
-                 </button>
-               </div>
-             ) : (
-               <button 
-                 onClick={handleEnableNotifications}
-                 className="w-full py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-900/20"
-               >
-                 <Bell size={14} className="fill-white" />
-                 تفعيل التنبيهات
-               </button>
-             )}
-
-             {notifPermission === 'granted' && (
-                <div className="w-full py-2.5 rounded-xl flex items-center justify-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-default text-xs font-bold">
-                  <Bell size={14} className="fill-emerald-400" />
-                  التنبيهات مفعلة
-                </div>
-             )}
-
-             {notifPermission === 'denied' && (
-               <p className="text-[9px] text-red-400 mt-2 text-center">
-                 تم رفض الإذن. يرجى تفعيله من إعدادات المتصفح.
-               </p>
-             )}
-          </div>
-      </div>
 
       {/* Free & No Ads Banner */}
       <div className="bg-gradient-to-r from-emerald-900/40 to-emerald-800/40 border border-emerald-500/20 rounded-xl p-3 flex items-center gap-3 shadow-lg">
@@ -434,11 +284,11 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
            <div className="bg-white/5 p-3 rounded-xl border border-white/5 mb-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-lg font-bold text-white shadow-lg shadow-emerald-900/40">
-                    {username ? username[0].toUpperCase() : session.user.email?.[0].toUpperCase()}
+                    {displayInitial?.toUpperCase()}
                 </div>
                 <div className="overflow-hidden flex-1">
                     <h4 className="text-sm font-bold text-white truncate flex items-center gap-2">
-                       {username || 'مستخدم'}
+                       {displayName}
                        <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 rounded border border-emerald-500/20">PRO</span>
                     </h4>
                     <p className="text-[10px] text-slate-400 truncate">{session.user.email}</p>
@@ -458,7 +308,7 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
                  <p className="text-[9px] text-slate-500 mb-1">المعرف</p>
                  <div className="flex items-center gap-2 text-slate-300 text-[10px] font-bold">
                     <User size={12} />
-                    <span>@{username || 'user'}</span>
+                    <span>@{username || firstName || 'user'}</span>
                  </div>
               </div>
            </div>
@@ -542,7 +392,7 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
          </div>
       </div>
 
-      {/* Donations Section (Updated Color to Green/Emerald) */}
+      {/* Donations Section */}
       <div className="glass-panel p-4 rounded-2xl border border-white/5 bg-gradient-to-br from-emerald-900/20 to-transparent relative overflow-hidden">
           <div className="absolute -right-6 -bottom-6 opacity-5 rotate-12">
              <Heart size={80} />

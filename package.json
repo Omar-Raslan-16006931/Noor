@@ -14,7 +14,8 @@
     "@google/genai": "^1.41.0",
     "lucide-react": "^0.574.0",
     "html2canvas": "^1.4.1",
-    "@supabase/supabase-js": "^2.97.0"
+    "@supabase/supabase-js": "^2.97.0",
+    "framer-motion": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

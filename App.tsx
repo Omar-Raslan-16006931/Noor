@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PrayerTimesView } from './components/PrayerTimes';
 import { QiblaCompass } from './components/QiblaCompass';
@@ -17,6 +16,7 @@ import { notificationService } from './services/notificationService';
 import { AppTab, PrayerData } from './types';
 import { Loader2, AlertTriangle, Heart } from 'lucide-react';
 import { Session } from '@supabase/supabase-js';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -450,7 +450,7 @@ const App: React.FC = () => {
       <div className="h-screen w-screen bg-slate-950 flex flex-col items-center justify-center text-emerald-500">
         <Loader2 size={48} className="animate-spin mb-4" />
         <h1 className="text-2xl font-bold font-serif text-white tracking-widest">NOOR</h1>
-        <p className="text-emerald-500/60 mt-2 text-sm">Spiritual Assistant</p>
+        <p className="text-emerald-500/60 mt-2 text-sm">Islamic Assistant</p>
       </div>
     );
   }
@@ -494,7 +494,18 @@ const App: React.FC = () => {
              </div>
           )}
           
-          {renderContent()}
+          {/* Framer Motion Wrap */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+            >
+              {renderContent()}
+            </motion.div>
+          </AnimatePresence>
 
           {/* Global App Footer */}
           <div className="mt-8 pb-4 flex justify-center">
