@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Home, BookOpen, Scroll, Settings, Hash } from 'lucide-react';
 import { AppTab } from '../types';
@@ -16,8 +15,8 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-3 z-50">
-      <div className="glass-panel rounded-2xl flex justify-around items-center h-16 px-1 shadow-2xl mx-auto max-w-sm border-t border-amber-500/10 bg-slate-900/95 backdrop-blur-xl">
+    <div className="fixed bottom-0 left-0 right-0 p-4 z-50">
+      <div className="glass-panel rounded-full flex justify-around items-center h-16 px-4 shadow-2xl mx-auto max-w-sm border-t border-amber-500/10 bg-slate-900/95 backdrop-blur-xl">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (

@@ -54,107 +54,58 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
   if (!item) return null;
 
-  const downloadImage = (blob: Blob, filename: string) => {
-      try {
-          const link = document.createElement('a');
-          link.download = filename;
-          link.href = URL.createObjectURL(blob);
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
-          alert('تم حفظ الصورة في جهازك بنجاح. يمكنك مشاركتها الآن من الاستوديو.');
-      } catch (e) {
-          console.error("Download fallback failed", e);
-          alert('تعذر حفظ أو مشاركة الصورة. تأكد من إعطاء الصلاحيات للمتصفح.');
-      }
-  };
-
+  // The Easy, Basic Solution
   const executeShare = async () => {
     if (!printRef.current) return;
     setIsGenerating(true);
 
     try {
-      const original = printRef.current;
-      const clone = original.cloneNode(true) as HTMLElement;
-      
-      const width = EXPORT_WIDTH;
-      const height = aspectRatio === '9:16' ? EXPORT_HEIGHT_PORTRAIT : EXPORT_HEIGHT_SQUARE;
-      
-      const cloneContainer = document.createElement('div');
-      cloneContainer.style.position = 'fixed';
-      cloneContainer.style.left = '-10000px';
-      cloneContainer.style.top = '0';
-      cloneContainer.style.width = `${width}px`;
-      cloneContainer.style.height = `${height}px`;
-      cloneContainer.style.zIndex = '-1';
-      cloneContainer.style.overflow = 'hidden';
-      
-      Object.assign(clone.style, {
-        width: '100%',
-        height: '100%',
-        transform: 'none',
-        borderRadius: '0',
-        visibility: 'visible',
-      });
-
-      cloneContainer.appendChild(clone);
-      document.body.appendChild(cloneContainer);
-
-      await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 500)); // Slightly faster timeout
-
-      const canvas = await html2canvas(clone, {
-        scale: 1,
+      // 1. Directly capture the element as it is, no complex cloning
+      const canvas = await html2canvas(printRef.current, {
+        scale: 1, 
         useCORS: true,
-        backgroundColor: '#020617', 
-        logging: false,
-        width: width,
-        height: height,
-        allowTaint: true, 
-        foreignObjectRendering: false 
+        backgroundColor: '#020617',
+        logging: false
       });
 
-      document.body.removeChild(cloneContainer);
+      // 2. Convert to basic Data URL
+      const dataUrl = canvas.toDataURL('image/png');
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-            setIsGenerating(false);
-            throw new Error('Image generation failed');
-        }
+      // 3. Try to use the Native Web Share API first
+      try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `noor-share-${Date.now()}.png`, { type: 'image/png' });
 
-        const filename = `noor-share-${Date.now()}.png`;
-        const file = new File([blob], filename, { type: 'image/png' });
-        
-        // Check if Web Share API is available and supports files
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: 'Noor Islamic App',
-                });
-            } catch (shareError: any) {
-                // If the user cancelled the share, do nothing.
-                if (shareError.name === 'AbortError') {
-                    console.log('User cancelled share');
-                } else {
-                    // If the share actually failed (iOS restriction, timeout, etc.), fallback to download
-                    console.warn('Share failed, attempting fallback download...', shareError);
-                    downloadImage(blob, filename);
-                }
-            }
-        } else {
-            // Web Share API not supported or can't share files (Desktop Safari, older browsers)
-            console.log('Web Share API not supported, downloading instead.');
-            downloadImage(blob, filename);
+          await navigator.share({
+            files: [file],
+            title: 'Noor Islamic App',
+          });
+          setIsGenerating(false);
+          return; // Stop here if native share succeeded
         }
+      } catch (shareErr: any) {
+        if (shareErr.name === 'AbortError') {
+           setIsGenerating(false);
+           return; // User cancelled, do nothing
+        }
+        console.log("Native share blocked, using basic download fallback...");
+      }
 
-        setIsGenerating(false);
-      }, 'image/png', 1.0);
+      // 4. Basic Fallback: Force an instant download to their phone gallery
+      const link = document.createElement('a');
+      link.download = `noor-share-${Date.now()}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
 
     } catch (err) {
-      console.error("Share Generation Error:", err);
-      alert('حدث خطأ أثناء تحضير الصورة. يرجى المحاولة مرة أخرى.');
+      console.error("Total failure:", err);
+      // Removed the error popup, replaced with a helpful suggestion
+      alert('نعتذر، لم نتمكن من الحفظ. يرجى أخذ لقطة شاشة (Screenshot) بدلاً من ذلك.');
+    } finally {
       setIsGenerating(false);
     }
   };
@@ -197,7 +148,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
             >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
 
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
                 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
 

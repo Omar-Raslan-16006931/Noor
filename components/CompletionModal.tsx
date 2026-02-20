@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { X, Share2, Loader2, Trophy, Award, CheckCircle2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
@@ -17,73 +16,54 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
     if (!printRef.current) return;
     setIsGenerating(true);
 
-    let clone: HTMLElement | null = null;
-
     try {
-      await new Promise(resolve => setTimeout(resolve, 100)); 
-      
-      const width = 1080;
-      const height = 1350;
-      
-      const original = printRef.current;
-      clone = original.cloneNode(true) as HTMLElement;
-      
-      Object.assign(clone.style, {
-        position: 'fixed',
-        top: '0',
-        left: '0',
-        width: `${width}px`,
-        height: `${height}px`,
-        zIndex: '-9999',
-        transform: 'none',
-        borderRadius: '0',
-        margin: '0',
-      });
-      
-      document.body.appendChild(clone);
-      
-      await new Promise(resolve => setTimeout(resolve, 150));
-
-      const canvas = await html2canvas(clone, {
-        scale: 1.5,
+      // 1. Directly capture the element
+      const canvas = await html2canvas(printRef.current, {
+        scale: 2, // Higher quality for the certificate
         backgroundColor: '#020617', 
         useCORS: true,
-        width: width,
-        height: height,
         logging: false,
       });
 
-      if (clone && document.body.contains(clone)) {
-        document.body.removeChild(clone);
-        clone = null;
-      }
+      // 2. Convert to Data URL
+      const dataUrl = canvas.toDataURL('image/png');
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) throw new Error('Blob generation failed');
+      // 3. Try Native Web Share API
+      try {
+        const response = await fetch(dataUrl);
+        const blob = await response.blob();
         const file = new File([blob], 'quran-completion.png', { type: 'image/png' });
 
-        if (navigator.share && navigator.canShare({ files: [file] })) {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
             title: 'Quran Completion',
             text: 'Alhamdulillah, I have completed reading the Holy Quran using Noor App.'
           });
-        } else {
-            const link = document.createElement('a');
-            link.download = 'quran-completion.png';
-            link.href = canvas.toDataURL('image/png');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+          setIsGenerating(false);
+          return; // Stop here if native share succeeded
         }
-        setIsGenerating(false);
-      }, 'image/png', 1.0);
-    } catch (e) {
-      if (clone && document.body.contains(clone)) {
-        document.body.removeChild(clone);
+      } catch (shareErr: any) {
+        if (shareErr.name === 'AbortError') {
+           setIsGenerating(false);
+           return; // User cancelled, do nothing
+        }
+        console.log("Native share blocked, using basic download fallback...");
       }
+
+      // 4. Basic Fallback: Force an instant download to their phone gallery
+      const link = document.createElement('a');
+      link.download = 'quran-completion.png';
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      alert('تم حفظ الشهادة في جهازك بنجاح.');
+
+    } catch (e) {
       console.error(e);
-      alert('Failed to share image');
+      alert('نعتذر، لم نتمكن من الحفظ. يرجى أخذ لقطة شاشة (Screenshot) بدلاً من ذلك.');
+    } finally {
       setIsGenerating(false);
     }
   };
