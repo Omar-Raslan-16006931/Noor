@@ -7,6 +7,8 @@ export const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [message, setMessage] = useState('');
@@ -21,7 +23,6 @@ export const Auth: React.FC = () => {
     const cleanUsername = username.trim().toLowerCase();
     
     // 2. Strict Validation Regex (Alphanumeric + Underscore only)
-    // This effectively blocks SQL injection characters like ', ", ;, --, etc.
     const usernameRegex = /^[a-z0-9_]+$/;
 
     try {
@@ -44,7 +45,9 @@ export const Auth: React.FC = () => {
           password,
           options: {
             data: {
-              username: cleanUsername, 
+              username: cleanUsername,
+              first_name: firstName.trim(),
+              last_name: lastName.trim()
             }
           }
         });
@@ -63,8 +66,25 @@ export const Auth: React.FC = () => {
            setMessage('تم إنشاء الحساب! يرجى التحقق من البريد الإلكتروني.');
         }
       } else {
+        // Sign In Logic (Email or Username)
+        let signInEmail = cleanEmail;
+
+        // Check if input is NOT an email (assume username)
+        if (!cleanEmail.includes('@')) {
+           const { data, error } = await supabase
+             .from('profiles')
+             .select('email') // We need to ensure email is accessible or stored in profiles if not available via auth.users directly to public
+             .eq('username', cleanEmail)
+             .single();
+           
+           if (error || !data) {
+             throw new Error('اسم المستخدم غير موجود');
+           }
+           signInEmail = data.email; // This assumes we add 'email' column to profiles or have RLS allowing reading it
+        }
+
         const { error } = await supabase.auth.signInWithPassword({
-          email: cleanEmail,
+          email: signInEmail,
           password,
         });
         if (error) throw error;
@@ -98,43 +118,68 @@ export const Auth: React.FC = () => {
 
       <form onSubmit={handleAuth} className="space-y-4">
         {isSignUp && (
-            <div className="space-y-1.5 animate-in slide-in-from-top-2">
-            <label className="text-xs text-slate-400 mr-1 font-bold">اسم المستخدم</label>
-            <div className="relative">
-                <User className="absolute right-3 top-3 text-slate-500" size={16} />
-                <input
-                type="text"
-                required
-                value={username}
-                onChange={(e) => {
-                    // Prevent typing of invalid characters immediately for better UX
-                    const val = e.target.value.toLowerCase();
-                    // Allow only a-z, 0-9, _
-                    if (/^[a-z0-9_]*$/.test(val)) {
-                        setUsername(val);
-                    }
-                }}
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors dir-ltr"
-                placeholder="username"
-                minLength={4}
-                maxLength={20}
-                />
-            </div>
-            <p className="text-[10px] text-slate-500 mr-1">أحرف إنجليزية وأرقام و "_" فقط</p>
+            <div className="space-y-3 animate-in slide-in-from-top-2">
+              <div className="flex gap-2">
+                <div className="space-y-1.5 flex-1">
+                  <label className="text-xs text-slate-400 mr-1 font-bold">الاسم الأول</label>
+                  <input
+                    type="text"
+                    required
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 px-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                    placeholder="محمد"
+                  />
+                </div>
+                <div className="space-y-1.5 flex-1">
+                  <label className="text-xs text-slate-400 mr-1 font-bold">اسم العائلة</label>
+                  <input
+                    type="text"
+                    required
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 px-3 text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors"
+                    placeholder="أحمد"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-slate-400 mr-1 font-bold">اسم المستخدم</label>
+                <div className="relative">
+                    <User className="absolute right-3 top-3 text-slate-500" size={16} />
+                    <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => {
+                        const val = e.target.value.toLowerCase();
+                        if (/^[a-z0-9_]*$/.test(val)) {
+                            setUsername(val);
+                        }
+                    }}
+                    className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors dir-ltr"
+                    placeholder="username"
+                    minLength={4}
+                    maxLength={20}
+                    />
+                </div>
+                <p className="text-[10px] text-slate-500 mr-1">أحرف إنجليزية وأرقام و "_" فقط</p>
+              </div>
             </div>
         )}
 
         <div className="space-y-1.5">
-          <label className="text-xs text-slate-400 mr-1 font-bold">البريد الإلكتروني</label>
+          <label className="text-xs text-slate-400 mr-1 font-bold">{isSignUp ? 'البريد الإلكتروني' : 'البريد الإلكتروني أو اسم المستخدم'}</label>
           <div className="relative">
             <Mail className="absolute right-3 top-3 text-slate-500" size={16} />
             <input
-              type="email"
+              type="text"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-2.5 pr-10 pl-4 text-white text-sm focus:border-emerald-500 focus:outline-none transition-colors dir-ltr"
-              placeholder="name@example.com"
+              placeholder={isSignUp ? "name@example.com" : "username or email"}
             />
           </div>
         </div>

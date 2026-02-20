@@ -1,7 +1,6 @@
 import { PrayerData } from '../types';
 
 const HADITH_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours
-const CHECK_INTERVAL = 60 * 1000; // Check every minute
 
 export const notificationService = {
   // 1. Request Permission
@@ -40,12 +39,26 @@ export const notificationService = {
         console.log('ServiceWorker registration failed: ', err);
       }
     }
+  },
+
+  // 4. Preferences
+  getPreferences: () => {
+    return {
+      prayers: localStorage.getItem('notif_pref_prayers') !== 'false', // Default true
+      hadith: localStorage.getItem('notif_pref_hadith') !== 'false'   // Default true
+    };
+  },
+
+  setPreferences: (prayers: boolean, hadith: boolean) => {
+    localStorage.setItem('notif_pref_prayers', prayers.toString());
+    localStorage.setItem('notif_pref_hadith', hadith.toString());
   }
 };
 
 // Helper: Check Prayer Times
 const checkPrayerTimes = (prayerData: PrayerData | null) => {
   if (!prayerData) return;
+  if (localStorage.getItem('notif_pref_prayers') === 'false') return;
 
   const timings = prayerData.timings;
   const now = new Date();
@@ -53,6 +66,13 @@ const checkPrayerTimes = (prayerData: PrayerData | null) => {
   const currentMinutes = now.getMinutes();
 
   const prayerNames = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+  const arabicNames: Record<string, string> = {
+    Fajr: 'الفجر',
+    Dhuhr: 'الظهر',
+    Asr: 'العصر',
+    Maghrib: 'المغرب',
+    Isha: 'العشاء'
+  };
 
   prayerNames.forEach((prayer) => {
     const timeStr = timings[prayer as keyof typeof timings]; // "HH:mm"
@@ -68,9 +88,11 @@ const checkPrayerTimes = (prayerData: PrayerData | null) => {
       
       // If we haven't notified for this prayer in the last 60 seconds
       if (Date.now() - lastTime > 60000) {
-        new Notification(`Time for ${prayer}`, {
-          body: `It is now time for ${prayer} prayer.`,
-          icon: '/icon.png'
+        new Notification(`حان الآن موعد صلاة ${arabicNames[prayer]}`, {
+          body: `حان الآن موعد صلاة ${arabicNames[prayer]} حسب التوقيت المحلي.`,
+          icon: '/icon.png',
+          dir: 'rtl',
+          lang: 'ar'
         });
         localStorage.setItem('last_prayer_notification', Date.now().toString());
       }
@@ -80,6 +102,8 @@ const checkPrayerTimes = (prayerData: PrayerData | null) => {
 
 // Helper: Check Hadith Time
 const checkHadithTime = () => {
+  if (localStorage.getItem('notif_pref_hadith') === 'false') return;
+
   const lastTimeStr = localStorage.getItem('last_hadith_notification');
   const lastTime = lastTimeStr ? parseInt(lastTimeStr) : 0;
   const now = Date.now();
@@ -93,18 +117,20 @@ const checkHadithTime = () => {
 // Helper: Trigger Hadith
 const triggerHadithNotification = () => {
   const hadiths = [
-    "The best among you are those who have the best manners and character.",
-    "Kindness is a mark of faith, and whoever is not kind has no faith.",
-    "The strong man is not the one who can overpower others. Rather, the strong man is the one who controls himself when he gets angry.",
-    "Allah does not look at your forms and possessions but he looks at your hearts and your deeds.",
-    "Speak good or remain silent.",
-    "He who is not grateful to people is not grateful to Allah."
+    "قال رسول الله ﷺ: «إنما الأعمال بالنيات، وإنما لكل امرئ ما نوى»",
+    "قال رسول الله ﷺ: «من كان يؤمن بالله واليوم الآخر فليقل خيراً أو ليصمت»",
+    "قال رسول الله ﷺ: «لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه»",
+    "قال رسول الله ﷺ: «اتق الله حيثما كنت، وأتبع السيئة الحسنة تمحها، وخالق الناس بخلق حسن»",
+    "قال رسول الله ﷺ: «المسلم من سلم المسلمون من لسانه ويده»",
+    "قال رسول الله ﷺ: «من لا يشكر الناس لا يشكر الله»"
   ];
   const randomHadith = hadiths[Math.floor(Math.random() * hadiths.length)];
 
-  new Notification("Hadith of the Moment", {
+  new Notification("حديث نبوي شريف", {
     body: randomHadith,
-    icon: '/icon.png'
+    icon: '/icon.png',
+    dir: 'rtl',
+    lang: 'ar'
   });
 };
 

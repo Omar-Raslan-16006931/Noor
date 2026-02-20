@@ -8,14 +8,24 @@ const DEFAULT_DATA: UserData = {
   quran: {
     currentPage: 0,
     totalPagesRead: 0,
-    khatamGoal: 1,
+    khatamGoal: 1, // Default 1
     lastReadDate: new Date().toISOString(),
     streak: 0,
     lastSurah: 1,
     lastAyah: 1
   },
   settings: {
-    hijriAdjustment: 0
+    hijriAdjustment: 0,
+    location: {
+      latitude: 21.4225, // Mecca default
+      longitude: 39.8262,
+      method: 4, // Umm al-Qura
+      name: 'مكة المكرمة'
+    },
+    notifications: {
+      prayers: true,
+      hadith: true
+    }
   }
 };
 

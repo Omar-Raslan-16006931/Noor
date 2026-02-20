@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PrayerData, QuranProgress } from '../types';
-import { MapPin, Moon, Sun, Sunrise, Sunset, Star, Clock, Gift, BookOpen, Flame, Share2, Navigation, Compass, PenTool } from 'lucide-react';
+import { MapPin, Moon, Sun, Sunrise, Sunset, Star, Clock, Gift, BookOpen, Flame, Share2, Navigation, Compass, PenTool, Scroll, Hash } from 'lucide-react';
 import { RAMADAN_DUAS, TRUSTED_HADITHS } from '../data/staticContent';
 import { hadithApi } from '../services/hadithApi';
 import { storageService } from '../services/storage';
@@ -15,6 +15,8 @@ interface PrayerTimesProps {
   onOpenQuran: () => void;
   onOpenQibla: () => void;
   onOpenJournal: () => void;
+  onOpenHadith: () => void;
+  onOpenTasbih: () => void;
 }
 
 // Pseudo-random generator seeded by date string
@@ -28,7 +30,7 @@ const getSeededRandomIndex = (seed: string, length: number) => {
 };
 
 export const PrayerTimesView: React.FC<PrayerTimesProps> = ({ 
-    data, locationName, isPrecise, onEnableLocation, onOpenQuran, onOpenQibla, onOpenJournal 
+    data, locationName, isPrecise, onEnableLocation, onOpenQuran, onOpenQibla, onOpenJournal, onOpenHadith, onOpenTasbih 
 }) => {
   const [nextPrayer, setNextPrayer] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -163,7 +165,7 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-24 pt-2 px-4 max-w-md mx-auto">
+    <div className="space-y-3 pb-24 pt-2 px-4 max-w-md mx-auto">
       <ShareModal item={shareItem} onClose={() => setShareItem(null)} />
 
       {/* Header */}
@@ -207,21 +209,21 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
       )}
 
       {/* Hero Countdown - Compact */}
-      <div className="relative overflow-hidden rounded-[2rem] p-5 text-center text-white shadow-xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl group">
+      <div className="relative overflow-hidden rounded-[1.5rem] p-4 text-center text-white shadow-xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl group -mt-1">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-20"></div>
         <div className="relative z-10 flex flex-col items-center">
-          <h2 className="text-[10px] text-emerald-200 font-bold mb-2 flex items-center gap-1.5 uppercase tracking-widest bg-black/20 px-2 py-0.5 rounded-full border border-white/5">
-             <Clock size={10} />
+          <h2 className="text-[9px] text-emerald-200 font-bold mb-1.5 flex items-center gap-1.5 uppercase tracking-widest bg-black/20 px-2 py-0.5 rounded-full border border-white/5">
+             <Clock size={9} />
              الصلاة القادمة
           </h2>
-          <h1 className="text-5xl font-bold mb-3 text-white font-quran drop-shadow-lg leading-tight">{nextPrayer}</h1>
-          <div className="bg-black/30 px-6 py-2 rounded-xl border border-white/10 backdrop-blur-md shadow-inner">
-            <span className="text-3xl font-mono font-bold text-emerald-300 tracking-wider shadow-emerald-500/20 drop-shadow-sm">{timeLeft}</span>
+          <h1 className="text-4xl font-bold mb-2 text-white font-quran drop-shadow-lg leading-tight">{nextPrayer}</h1>
+          <div className="bg-black/30 px-5 py-1.5 rounded-lg border border-white/10 backdrop-blur-md shadow-inner">
+            <span className="text-2xl font-mono font-bold text-emerald-300 tracking-wider shadow-emerald-500/20 drop-shadow-sm">{timeLeft}</span>
           </div>
           
-          <div className="flex items-center gap-1.5 mt-3 opacity-60 bg-black/20 px-3 py-1 rounded-full border border-white/5">
-              <span className="text-[10px] text-slate-400">الوقت الآن</span>
-              <span className="text-xs font-mono font-bold text-slate-200 dir-ltr">
+          <div className="flex items-center gap-1.5 mt-2 opacity-60 bg-black/20 px-2.5 py-0.5 rounded-full border border-white/5">
+              <span className="text-[9px] text-slate-400">الوقت الآن</span>
+              <span className="text-[10px] font-mono font-bold text-slate-200 dir-ltr">
                   {currentTime}
               </span>
           </div>
@@ -281,7 +283,7 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
       <div className="grid grid-cols-2 gap-3">
         <button
           onClick={onOpenQibla}
-          className="bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group"
+          className="bg-indigo-900/40 border border-indigo-500/20 hover:bg-indigo-900/60 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group backdrop-blur-sm"
         >
            <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-colors shadow-lg">
              <Compass size={20} />
@@ -291,12 +293,32 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
 
         <button
           onClick={onOpenJournal}
-          className="bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group"
+          className="bg-rose-900/40 border border-rose-500/20 hover:bg-rose-900/60 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group backdrop-blur-sm"
         >
            <div className="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center text-rose-400 group-hover:bg-rose-500 group-hover:text-white transition-colors shadow-lg">
              <PenTool size={20} />
            </div>
            <span className="text-sm font-bold text-rose-100">خواطري</span>
+        </button>
+
+        <button
+          onClick={onOpenHadith}
+          className="bg-amber-900/40 border border-amber-500/20 hover:bg-amber-900/60 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group backdrop-blur-sm"
+        >
+           <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 group-hover:bg-amber-500 group-hover:text-white transition-colors shadow-lg">
+             <Scroll size={20} />
+           </div>
+           <span className="text-sm font-bold text-amber-100">الحديث</span>
+        </button>
+
+        <button
+          onClick={onOpenTasbih}
+          className="bg-emerald-900/40 border border-emerald-500/20 hover:bg-emerald-900/60 p-4 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group backdrop-blur-sm"
+        >
+           <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors shadow-lg">
+             <Hash size={20} />
+           </div>
+           <span className="text-sm font-bold text-emerald-100">المسبحة</span>
         </button>
       </div>
 
@@ -388,7 +410,7 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
               </div>
               <div className="flex items-baseline gap-1 dir-ltr">
                  <span className={`text-lg font-mono ${isNext ? 'font-bold' : ''}`}>{displayTime}</span>
-                 <span className={`text-[10px] ${isNext ? 'text-emerald-200' : 'text-slate-500'}`}>{suffix}</span>
+                 <span className={`text-xs font-bold ${isNext ? 'text-emerald-100' : 'text-slate-400'}`}>{suffix}</span>
               </div>
             </div>
           );

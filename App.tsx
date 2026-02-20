@@ -21,6 +21,18 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>(AppTab.HOME);
   const [loading, setLoading] = useState(true);
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Reset scroll on tab change
+  useEffect(() => {
+    // Reset window scroll (for mobile/body scrolling)
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Reset container scroll (for desktop/constrained scrolling)
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [activeTab]);
   
   // Location & Method State
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -88,14 +100,33 @@ const App: React.FC = () => {
       // Load user settings if logged in
       if (session) {
         storageService.getUserData().then(data => {
+             // Load Hijri Adjustment
              if (data.settings?.hijriAdjustment !== undefined) {
                  setHijriAdjustment(data.settings.hijriAdjustment);
-                 // If we have coords already, update prayers with new adjustment
-                 if (coords) {
-                     fetchPrayerTimes(coords.latitude, coords.longitude, data.settings.hijriAdjustment, method);
-                 }
+             }
+             
+             // Load Location Settings if available
+             if (data.settings?.location) {
+                 const { latitude, longitude, method, name } = data.settings.location;
+                 setCoords({ latitude, longitude });
+                 setMethod(method);
+                 setLocationName(name);
+                 fetchPrayerTimes(latitude, longitude, data.settings.hijriAdjustment, method);
+             } else {
+                 // Fallback to IP/GPS if no saved location
+                 initLocationStrategy();
+             }
+
+             // Load Notification Preferences
+             if (data.settings?.notifications) {
+                 notificationService.setPreferences(
+                     data.settings.notifications.prayers,
+                     data.settings.notifications.hadith
+                 );
              }
         });
+      } else {
+          initLocationStrategy();
       }
     }).catch(err => console.error("Supabase connection error:", err));
 
@@ -106,8 +137,12 @@ const App: React.FC = () => {
          storageService.getUserData().then(data => {
             if (data.settings?.hijriAdjustment !== undefined) {
                 setHijriAdjustment(data.settings.hijriAdjustment);
-                if (coords) {
-                   fetchPrayerTimes(coords.latitude, coords.longitude, data.settings.hijriAdjustment, method);
+                if (data.settings.location) {
+                    const { latitude, longitude, method, name } = data.settings.location;
+                    setCoords({ latitude, longitude });
+                    setMethod(method);
+                    setLocationName(name);
+                    fetchPrayerTimes(latitude, longitude, data.settings.hijriAdjustment, method);
                 }
             }
          });
@@ -180,7 +215,7 @@ const App: React.FC = () => {
       }
     };
 
-    initLocationStrategy();
+    // initLocationStrategy is called inside auth check now
 
     return () => {
       subscription.unsubscribe();
@@ -221,7 +256,26 @@ const App: React.FC = () => {
             const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=ar`);
             const data = await res.json();
             const city = data.city || data.locality || data.principalSubdivision || '';
-            setLocationName(city ? `${city} (GPS)` : 'موقعي الحالي (GPS)');
+            const newLocationName = city ? `${city} (GPS)` : 'موقعي الحالي (GPS)';
+            setLocationName(newLocationName);
+            
+            // Save to storage if logged in
+            if (session) {
+                storageService.getUserData().then(userData => {
+                    storageService.saveUserData({
+                        ...userData,
+                        settings: {
+                            ...userData.settings,
+                            location: {
+                                latitude,
+                                longitude,
+                                method,
+                                name: newLocationName
+                            }
+                        }
+                    });
+                });
+            }
         } catch (e) {
             console.error("Reverse geocoding failed", e);
             setLocationName('موقعي الحالي (GPS)');
@@ -312,6 +366,8 @@ const App: React.FC = () => {
                 onOpenQuran={() => setActiveTab(AppTab.QURAN)}
                 onOpenQibla={() => setActiveTab(AppTab.QIBLA)}
                 onOpenJournal={() => setActiveTab(AppTab.JOURNAL)}
+                onOpenHadith={() => setActiveTab(AppTab.HADITH)}
+                onOpenTasbih={() => setActiveTab(AppTab.TASBIH)}
             />
         );
       case AppTab.QIBLA:
@@ -383,14 +439,13 @@ const App: React.FC = () => {
             </div>
         </header>
 
-        <div className="flex-1 p-3 pb-24 overflow-y-auto custom-scrollbar">
+        <div ref={scrollContainerRef} className="flex-1 p-3 pb-24 overflow-y-auto custom-scrollbar">
           {/* Beta Alert Banner */}
-          <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3 mb-3 flex items-start gap-3 backdrop-blur-sm">
-             <AlertTriangle className="text-indigo-400 shrink-0 mt-0.5" size={16} />
-             <div>
-               <p className="text-xs text-indigo-200 font-bold mb-0.5">نسخة تجريبية (Beta)</p>
-               <p className="text-[10px] text-indigo-200/70 leading-relaxed">
-                 هذا التطبيق لا يزال في مرحلة التطوير، قد تواجه بعض الأخطاء. شكراً لتفهمكم.
+          <div className="bg-indigo-950/40 border border-indigo-500/10 rounded-lg p-2 mb-2 flex items-center gap-2 backdrop-blur-sm shadow-sm">
+             <AlertTriangle className="text-indigo-400 shrink-0" size={12} />
+             <div className="flex-1">
+               <p className="text-[10px] text-indigo-200/80 leading-tight">
+                 <span className="font-bold text-indigo-100">نسخة تجريبية (Beta):</span> التطبيق قيد التطوير، شكراً لتفهمكم.
                </p>
              </div>
           </div>

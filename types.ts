@@ -64,13 +64,39 @@ export interface UserData {
   settings: {
     hijriAdjustment: number;
     theme?: string;
+    location?: {
+      latitude: number;
+      longitude: number;
+      method: number;
+      name: string;
+    };
+    notifications?: {
+      prayers: boolean;
+      hadith: boolean;
+    };
   };
 }
 
 export interface UserProfile {
   id: string;
   username: string;
+  first_name?: string;
+  last_name?: string;
+  is_admin?: boolean;
   data: UserData;
+}
+
+export interface Report {
+  id: string;
+  user_id: string;
+  type: 'suggestion' | 'bug';
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  user?: {
+    username: string;
+    email: string;
+  };
 }
 
 export interface Hadith {

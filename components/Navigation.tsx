@@ -12,8 +12,6 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
   const navItems = [
     { id: AppTab.HOME, icon: Home, label: 'الرئيسية' },
     { id: AppTab.QURAN, icon: BookOpen, label: 'الختمة' },
-    { id: AppTab.TASBIH, icon: Hash, label: 'المسبحة' },
-    { id: AppTab.HADITH, icon: Scroll, label: 'الحديث' },
     { id: AppTab.SETTINGS, icon: Settings, label: 'إعدادات' },
   ];
 
