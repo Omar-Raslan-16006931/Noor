@@ -71,16 +71,15 @@ export const Auth: React.FC = () => {
 
         // Check if input is NOT an email (assume username)
         if (!cleanEmail.includes('@')) {
-           const { data, error } = await supabase
-             .from('profiles')
-             .select('email') // We need to ensure email is accessible or stored in profiles if not available via auth.users directly to public
-             .eq('username', cleanEmail)
-             .single();
+           // Use RPC function to get email from username securely
+           const { data: emailData, error: emailError } = await supabase
+             .rpc('get_email_by_username', { username_input: cleanEmail });
            
-           if (error || !data) {
+           if (emailError || !emailData) {
+             console.error('Username lookup failed:', emailError);
              throw new Error('اسم المستخدم غير موجود');
            }
-           signInEmail = data.email; // This assumes we add 'email' column to profiles or have RLS allowing reading it
+           signInEmail = emailData;
         }
 
         const { error } = await supabase.auth.signInWithPassword({

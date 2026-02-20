@@ -124,7 +124,13 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
     return () => clearInterval(timer);
   }, [data]);
 
-  if (!data) return <div className="text-center p-10 animate-pulse text-white font-quran text-lg">جاري تحميل البيانات...</div>;
+  if (!data) return (
+    <div className="h-full flex flex-col items-center justify-center text-center p-10 animate-pulse text-white font-quran text-lg">
+      <Clock className="mb-4 animate-spin text-emerald-500" size={32} />
+      <p>جاري تحميل البيانات...</p>
+      <p className="text-xs text-slate-400 mt-2">يرجى الانتظار قليلاً</p>
+    </div>
+  );
 
   const hijriMonth = data.date.hijri.month.number;
   const hijriDay = parseInt(data.date.hijri.day);

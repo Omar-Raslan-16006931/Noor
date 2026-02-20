@@ -16,8 +16,9 @@ export const BrandingGenerator: React.FC = () => {
     setError('');
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) throw new Error('API Key not found');
+      // Use process.env as configured in vite.config.ts
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) throw new Error('API Key not found. Please ensure GEMINI_API_KEY is set in your environment variables.');
 
       const ai = new GoogleGenAI({ apiKey });
       
