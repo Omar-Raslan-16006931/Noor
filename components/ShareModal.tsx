@@ -48,14 +48,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
   if (!item) return null;
 
+  // YOUR WORKING SAVE METHOD
   const executeShare = async () => {
     if (!printRef.current) return;
     setIsGenerating(true);
 
     try {
-      // Force wait for fonts to ensure no empty blocks are drawn
+      // CRITICAL FIX FOR TEXT GLITCH: 
+      // Force browser to fully render the Arabic fonts before taking the screenshot
       await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
       const canvas = await html2canvas(printRef.current, {
         scale: 2, 
@@ -115,7 +117,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
       if (text.length > 250) return 'text-5xl leading-relaxed';
       if (text.length > 120) return 'text-6xl leading-relaxed';
       if (text.length > 60) return 'text-7xl leading-relaxed';
-      return 'text-8xl leading-relaxed';
+      return 'text-8xl leading-[1.4]';
   };
 
   return (
@@ -140,18 +142,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
          >
             <div 
                ref={printRef}
-               className="w-full h-full flex flex-col relative overflow-hidden text-white bg-slate-950"
+               className="w-full h-full flex flex-col relative overflow-hidden text-white bg-[#020617]"
             >
                 {/* YOUR ORIGINAL COOL BACKGROUND */}
                 <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
                 
-                {/* CRASH FIX: Replaced blur-[100px] with a radial gradient. Looks exactly the same, uses 0% RAM. */}
+                {/* Replaced blur with radial gradient so it doesn't crash the phone */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_60%)] pointer-events-none"></div>
 
                 <div className="absolute inset-5 border border-white/10 rounded-[40px] pointer-events-none z-0"></div>
                 <div className="absolute inset-7 border border-emerald-500/10 rounded-[32px] pointer-events-none z-0"></div>
 
+                {/* Corners */}
                 <div className="absolute top-8 left-8 w-24 h-24 pointer-events-none opacity-40">
                     <svg viewBox="0 0 100 100" fill="none" stroke="#10b981" strokeWidth="1.5"><path d="M2 30 V 10 Q 2 2 10 2 H 30" /></svg>
                 </div>
@@ -184,10 +187,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                                <Quote size={80} className="text-emerald-400 fill-emerald-400/10 rotate-180" />
                            </div>
 
-                           {/* GLITCH FIX: Removed drop-shadow-2xl class and added standard textShadow style. Added explicit dir="rtl" attribute. */}
-                           <p dir="rtl" className={`font-quran font-bold text-white text-center px-4 ${displayText ? getTextSizeClass(displayText) : ''}`} style={{ textShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
-                                {displayText}
-                           </p>
+                           {/* TEXT GLITCH FIX: Replaced drop-shadow class with a standard textShadow style and forced dir="rtl" */}
+                           <div dir="rtl" className="w-full text-center">
+                               <p className={`font-quran font-bold text-white leading-[1.6] inline-block ${displayText ? getTextSizeClass(displayText) : ''}`} style={{ textShadow: '0 4px 15px rgba(0,0,0,0.4)' }}>
+                                    {displayText}
+                               </p>
+                           </div>
                            
                            <div className="absolute -bottom-8 -left-4 opacity-40">
                                <Quote size={80} className="text-emerald-400 fill-emerald-400/10" />
@@ -226,7 +231,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                         </div>
                         
                         <div>
-                            {/* GLITCH FIX: Removed drop-shadow-md class */}
+                            {/* TEXT GLITCH FIX: Removed drop-shadow class */}
                             <span className="text-4xl font-black font-quran text-white opacity-90">نــور</span>
                         </div>
                     </div>
