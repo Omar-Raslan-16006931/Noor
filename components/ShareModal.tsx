@@ -21,7 +21,7 @@ type AspectRatio = '9:16' | '1:1';
 
 export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('9:16');
-  const [shareFile, setShareFile] = useState<File | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [scale, setScale] = useState(1);
   const printRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,7 +30,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
   const EXPORT_HEIGHT_PORTRAIT = 1920;
   const EXPORT_HEIGHT_SQUARE = 1080;
 
-  // 1. Handle UI Scaling for the preview
   useEffect(() => {
     if (!item || !containerRef.current) return;
     const updateScale = () => {
@@ -47,72 +46,67 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
     return () => window.removeEventListener('resize', updateScale);
   }, [item, aspectRatio]);
 
-  // 2. Pre-generate the image so it's ready EXACTLY when they click share
-  useEffect(() => {
-    if (!item || !printRef.current) return;
-    
-    setShareFile(null);
-    let isMounted = true;
-
-    const generateReadyFile = async () => {
-      try {
-        await document.fonts.ready;
-        await new Promise(resolve => setTimeout(resolve, 600)); // wait for layout
-
-        if (!isMounted || !printRef.current) return;
-
-        const canvas = await html2canvas(printRef.current, {
-          scale: 1, // 1 is enough for 1080px, prevents mobile RAM crash
-          useCORS: true,
-          backgroundColor: '#020617', 
-          logging: false,
-          allowTaint: true
-        });
-
-        canvas.toBlob((blob) => {
-          if (blob && isMounted) {
-            // Using JPEG is much faster and lighter for mobile sharing
-            const file = new File([blob], `noor-share-${Date.now()}.jpg`, { type: 'image/jpeg' });
-            setShareFile(file);
-          }
-        }, 'image/jpeg', 0.95);
-
-      } catch (err) {
-        console.error("Background generation failed:", err);
-      }
-    };
-
-    generateReadyFile();
-
-    return () => { isMounted = false; };
-  }, [item, aspectRatio]);
-
   if (!item) return null;
 
-  // 3. Instant Native Share
+  const fallbackDownload = (blob: Blob) => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `noor-${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  };
+
   const executeShare = async () => {
-    if (!shareFile) return;
+    if (!printRef.current) return;
+    setIsGenerating(true);
 
     try {
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [shareFile] })) {
-        await navigator.share({
-          files: [shareFile],
-          title: 'Noor Islamic App'
-        });
-      } else {
-        // Fallback for desktop browsers
-        const link = document.createElement('a');
-        link.download = shareFile.name;
-        link.href = URL.createObjectURL(shareFile);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-      }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
-        alert('تعذر فتح قائمة المشاركة. يرجى التأكد من إعطاء الصلاحيات للمتصفح.');
-      }
+      // 1. Capture exactly what's on screen (Fast & Lightweight)
+      const canvas = await html2canvas(printRef.current, {
+        scale: 1.5, // Crisp quality but doesn't crash mobile RAM
+        useCORS: true, // Fixes CORS issues without "tainting" the canvas
+        backgroundColor: '#020617', 
+        logging: false
+        // DO NOT ADD allowTaint: true here (that caused the infinite load!)
+      });
+
+      // 2. Convert to Blob using JPEG (Much faster & safer for native sharing than PNG)
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setIsGenerating(false);
+          alert('تعذر إنشاء الصورة. حاول مرة أخرى.');
+          return;
+        }
+
+        const file = new File([blob], `noor-share-${Date.now()}.jpg`, { type: 'image/jpeg' });
+
+        // 3. Trigger Native Share
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'نور - Noor App'
+            });
+          } catch (e: any) {
+            // If the user didn't intentionally cancel it, fall back to download
+            if (e.name !== 'AbortError') {
+              fallbackDownload(blob);
+            }
+          }
+        } else {
+          // If browser doesn't support file sharing, force a download
+          fallbackDownload(blob);
+        }
+        
+        setIsGenerating(false);
+      }, 'image/jpeg', 0.95);
+
+    } catch (err) {
+      console.error(err);
+      setIsGenerating(false);
+      alert('حدث خطأ غير متوقع. يرجى أخذ لقطة شاشة (Screenshot).');
     }
   };
 
@@ -154,7 +148,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
             >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
                 
-                {/* Replaced heavy blur filters with safe radial gradients */}
                 <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
                 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_70%)] pointer-events-none"></div>
@@ -275,10 +268,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
          <button 
            onClick={executeShare}
-           disabled={!shareFile}
+           disabled={isGenerating}
            className="px-6 bg-white text-slate-900 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-50 active:scale-95 transition-all disabled:opacity-50 h-full"
          >
-           {!shareFile ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Share2 size={20} />}
+           {isGenerating ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Share2 size={20} />}
          </button>
        </div>
     </div>
