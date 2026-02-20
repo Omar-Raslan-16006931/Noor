@@ -95,6 +95,25 @@ const App: React.FC = () => {
 
   // 1. Initial Load: Auth & Location Strategy
   useEffect(() => {
+    // Safety Timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+        setLoading(prev => {
+            if (prev) {
+                console.warn("Loading timed out, forcing render");
+                // If we timed out and have no data, set default Makkah
+                if (!prayerData) {
+                    const mecca = { lat: 21.4225, lng: 39.8262 };
+                    setCoords({ latitude: mecca.lat, longitude: mecca.lng });
+                    setLocationName('مكة المكرمة (افتراضي)');
+                    setMethod(4);
+                    fetchPrayerTimes(mecca.lat, mecca.lng, hijriAdjustment, 4);
+                }
+                return false;
+            }
+            return prev;
+        });
+    }, 10000); // 10 seconds max load time
+
     // Auth Check
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -112,7 +131,8 @@ const App: React.FC = () => {
                  setCoords({ latitude, longitude });
                  setMethod(method);
                  setLocationName(name);
-                 fetchPrayerTimes(latitude, longitude, data.settings.hijriAdjustment, method);
+                 fetchPrayerTimes(latitude, longitude, data.settings.hijriAdjustment, method)
+                    .finally(() => setLoading(false));
              } else {
                  // Fallback to IP/GPS if no saved location
                  initLocationStrategy();
@@ -129,7 +149,10 @@ const App: React.FC = () => {
       } else {
           initLocationStrategy();
       }
-    }).catch(err => console.error("Supabase connection error:", err));
+    }).catch(err => {
+        console.error("Supabase connection error:", err);
+        initLocationStrategy();
+    });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -188,21 +211,31 @@ const App: React.FC = () => {
           }
         }
 
-        // STRATEGY 2: Fallback to IP Geolocation
-        const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-        if (!res.ok) throw new Error('IP Fetch failed');
+        // STRATEGY 2: Fallback to IP Geolocation (with timeout)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
         
-        const data = await res.json();
-        const lat = parseFloat(data.latitude);
-        const lng = parseFloat(data.longitude);
-        const detectedMethod = getMethodByCountryCode(data.country_code);
+        try {
+            const res = await fetch('https://get.geojs.io/v1/ip/geo.json', { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            if (!res.ok) throw new Error('IP Fetch failed');
+            
+            const data = await res.json();
+            const lat = parseFloat(data.latitude);
+            const lng = parseFloat(data.longitude);
+            const detectedMethod = getMethodByCountryCode(data.country_code);
 
-        setCoords({ latitude: lat, longitude: lng });
-        setLocationName(data.city || data.country || 'موقع تقريبي');
-        setMethod(detectedMethod);
-        setIsPreciseLocation(false); // IP is approximate
+            setCoords({ latitude: lat, longitude: lng });
+            setLocationName(data.city || data.country || 'موقع تقريبي');
+            setMethod(detectedMethod);
+            setIsPreciseLocation(false); // IP is approximate
 
-        await fetchPrayerTimes(lat, lng, hijriAdjustment, detectedMethod);
+            await fetchPrayerTimes(lat, lng, hijriAdjustment, detectedMethod);
+        } catch (fetchErr) {
+            clearTimeout(timeoutId);
+            throw fetchErr;
+        }
       } catch (err) {
         console.error("Location Error:", err);
         // STRATEGY 3: Fallback to Makkah
@@ -221,6 +254,7 @@ const App: React.FC = () => {
     return () => {
       subscription.unsubscribe();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearTimeout(safetyTimeout);
     };
   }, []);
 
