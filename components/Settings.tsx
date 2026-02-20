@@ -29,6 +29,7 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
   const [reportMessage, setReportMessage] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportSuccess, setReportSuccess] = useState(false);
+  const [isTestingNotification, setIsTestingNotification] = useState(false);
 
   // Admin State
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -118,6 +119,25 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
             }
         });
     }
+  };
+
+  const handleTestNotification = () => {
+    if (notifPermission !== 'granted') {
+      alert('يرجى تفعيل التنبيهات أولاً');
+      return;
+    }
+
+    setIsTestingNotification(true);
+    
+    setTimeout(() => {
+      new Notification('تطبيق نور', { 
+        body: 'هذا اختبار للتنبيهات بعد 10 ثواني', 
+        icon: '/icon.png', 
+        dir: 'rtl', 
+        lang: 'ar' 
+      });
+      setIsTestingNotification(false);
+    }, 10000);
   };
 
   const handleSubmitReport = async (e: React.FormEvent) => {
@@ -351,6 +371,24 @@ export const Settings: React.FC<SettingsProps> = ({ session, hijriAdjustment, on
                      <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-transform ${hadithNotifEnabled ? 'left-1' : 'left-4'}`} />
                    </button>
                  </div>
+
+                 <button 
+                   onClick={handleTestNotification}
+                   disabled={isTestingNotification}
+                   className="w-full mt-2 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 text-xs font-bold bg-slate-700 hover:bg-slate-600 text-white shadow-slate-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                   {isTestingNotification ? (
+                     <>
+                       <Loader2 size={14} className="animate-spin" />
+                       جاري الانتظار 10 ثواني...
+                     </>
+                   ) : (
+                     <>
+                       <Bell size={14} />
+                       تجربة التنبيه (بعد 10 ثواني)
+                     </>
+                   )}
+                 </button>
                </div>
              ) : (
                <button 
