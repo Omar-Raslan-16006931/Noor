@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Smartphone, Monitor, Share2, Loader2, Quote, Star, Moon, Download } from 'lucide-react';
+import { X, Smartphone, Monitor, Loader2, Quote, Star, Moon, Download } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface ShareItem {
@@ -60,25 +60,25 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
   if (!item) return null;
 
-  const executeShare = async () => {
+  const generateImage = async () => {
     if (!printRef.current) return;
     setIsGenerating(true);
 
     try {
-      // CRITICAL: Wait for fonts to load to prevent corrupted text
+      // CRITICAL FIX FOR CORRUPTED TEXT: 
+      // Force browser to wait for Arabic fonts to finish loading and shaping
       await document.fonts.ready;
-      // Add a small delay to ensure layout is stable
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-      // 1. Capture the element
+      // 1. Capture the element exactly as it is
       const canvas = await html2canvas(printRef.current, {
-        scale: 1.5, // Good balance of quality and performance
-        useCORS: true, // Necessary for loading external resources like fonts
-        backgroundColor: '#020617', // Set a solid background color
-        logging: false,
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#020617',
+        logging: false
       });
 
-      // 2. Convert to Data URL (PNG format)
+      // 2. Convert to Data URL
       const dataUrl = canvas.toDataURL('image/png');
       
       // 3. Set the state to show the actual image
@@ -86,7 +86,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
     } catch (err) {
       console.error("Image Generation Failed:", err);
-      alert('حدث خطأ أثناء إنشاء الصورة. يرجى المحاولة مرة أخرى.');
+      alert('حدث خطأ أثناء تحضير الصورة. يرجى أخذ لقطة شاشة بدلاً من ذلك.');
     } finally {
       setIsGenerating(false);
     }
@@ -117,23 +117,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
        <div ref={containerRef} className="flex-1 flex flex-col items-center justify-center overflow-hidden relative min-h-0 w-full bg-slate-950/50 rounded-3xl border border-white/5 p-4">
          
          {generatedImageUrl ? (
-            // SHOW THE GENERATED IMAGE TO THE USER
+            // SHOW THE GENERATED IMAGE (Pinterest Method)
             <div className="flex flex-col items-center justify-center w-full h-full relative animate-in zoom-in-95 duration-300">
-                {/* The actual image tag showing the generated image */}
                 <img 
                     src={generatedImageUrl} 
                     alt="Generated Share" 
                     className="max-h-[85%] max-w-full object-contain rounded-lg shadow-2xl border border-white/20"
                 />
                 
-                {/* Instruction overlay */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-emerald-600/90 text-white px-6 py-3 rounded-full backdrop-blur-md font-bold text-sm shadow-xl flex items-center gap-2 whitespace-nowrap animate-bounce">
                     <Download size={18} />
                     اضغط مطولاً على الصورة لحفظها أو مشاركتها
                 </div>
             </div>
          ) : (
-            // SHOW THE HTML PREVIEW (Your Original Design)
+            // SHOW THE HTML PREVIEW (Beautiful Original Design)
             <div 
               style={{ 
                 width: EXPORT_WIDTH,
@@ -149,7 +147,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
                >
                    <div className="absolute inset-0 bg-gradient-to-br from-[#020617] via-[#0f172a] to-[#1e293b]"></div>
    
-                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
+                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23ffffff' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E")` }}></div>
                    
                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none"></div>
    
@@ -270,11 +268,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ item, onClose }) => {
 
          {!generatedImageUrl && (
              <button 
-               onClick={executeShare}
+               onClick={generateImage}
                disabled={isGenerating}
                className="px-6 bg-white text-slate-900 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-50 active:scale-95 transition-all disabled:opacity-50 h-full"
              >
-               {isGenerating ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Share2 size={20} />}
+               {isGenerating ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Download size={20} />}
              </button>
          )}
        </div>
