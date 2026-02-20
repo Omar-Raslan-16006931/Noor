@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PrayerData, QuranProgress } from '../types';
 import { MapPin, Moon, Sun, Sunrise, Sunset, Star, Clock, Gift, BookOpen, Flame, Share2, Navigation, Compass, PenTool, Scroll, Hash } from 'lucide-react';
@@ -223,13 +222,16 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
              الصلاة القادمة
           </h2>
           <h1 className="text-4xl font-bold mb-2 text-white font-quran drop-shadow-lg leading-tight">{nextPrayer}</h1>
-          <div className="bg-black/30 px-5 py-1.5 rounded-lg border border-white/10 backdrop-blur-md shadow-inner">
-            <span className="text-2xl font-mono font-bold text-emerald-300 tracking-wider shadow-emerald-500/20 drop-shadow-sm">{timeLeft}</span>
+          
+          {/* Updated Countdown Box */}
+          <div className="bg-black/30 px-6 py-2 rounded-xl border border-white/10 backdrop-blur-md shadow-inner flex flex-col items-center">
+            <span className="text-[9px] text-emerald-400/70 font-bold mb-1">الوقت المتبقي</span>
+            <span className="text-2xl font-mono font-bold text-emerald-300 tracking-wider shadow-emerald-500/20 drop-shadow-sm leading-none">{timeLeft}</span>
           </div>
           
-          <div className="flex items-center gap-1.5 mt-2 opacity-60 bg-black/20 px-2.5 py-0.5 rounded-full border border-white/5">
-              <span className="text-[9px] text-slate-400">الوقت الآن</span>
-              <span className="text-[10px] font-mono font-bold text-slate-200 dir-ltr">
+          <div className="flex items-center gap-2 mt-3 opacity-80 bg-black/20 px-3 py-1 rounded-full border border-white/5">
+              <span className="text-[10px] text-slate-400 font-bold">الوقت الآن</span>
+              <span className="text-sm font-mono font-bold text-slate-100 dir-ltr tracking-wider">
                   {currentTime}
               </span>
           </div>
@@ -333,7 +335,7 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
         <div className="relative overflow-hidden rounded-xl p-4 bg-gradient-to-r from-amber-600 to-amber-800 text-white shadow-lg animate-in slide-in-from-top-5 duration-700">
            <div className="absolute top-0 right-0 p-2 opacity-10">
               <Gift size={60} />
-           </div>
+             </div>
            <div className="relative z-10 text-center">
               <h2 className="text-2xl font-bold font-quran mb-1">{eidGreeting}</h2>
               <p className="text-xs opacity-90 font-quran">تقبل الله منا ومنكم صالح الأعمال</p>
@@ -359,7 +361,7 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
          </div>
          <div className="mb-1">
             <p className="text-base text-white font-quran leading-loose text-center drop-shadow-sm dir-rtl">
-               "{dailyWisdom.text}"
+                "{dailyWisdom.text}"
             </p>
             <div className="flex items-center justify-center gap-2 mt-3 opacity-60">
                 <div className="h-px w-6 bg-amber-200/50"></div>
@@ -387,7 +389,7 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
                 </button>
             </div>
             <p className="text-lg text-white font-quran leading-relaxed text-right drop-shadow-sm">
-               "{featuredDua.arabic}"
+                "{featuredDua.arabic}"
             </p>
             <p className="text-[9px] text-slate-400 mt-1 text-left">{featuredDua.source}</p>
          </div>
