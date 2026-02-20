@@ -11,30 +11,50 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
-  const [date] = useState(new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }));
+  const [date] = useState(
+    new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+  );
 
   const generateImage = async () => {
     if (!printRef.current) return;
     setIsGenerating(true);
 
+    // Save original transform so we can restore it after capture
+    const scaleWrapper = printRef.current.parentElement;
+    const originalTransform = scaleWrapper?.style.transform ?? '';
+
     try {
-      // FIX: Use lower scale on mobile to avoid canvas memory overflow
+      // CRITICAL: Reset any CSS transform before capture — same fix as ShareModal
+      if (scaleWrapper) {
+        scaleWrapper.style.transform = 'scale(1)';
+      }
+
+      // Wait for repaint at full scale
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const captureScale = isMobile ? 1.5 : 2.5;
 
       const canvas = await html2canvas(printRef.current, {
-        scale: captureScale,
+        scale: isMobile ? 1.5 : 2.5,
         backgroundColor: '#020617',
         useCORS: true,
         allowTaint: true,
         logging: false,
       });
 
+      // Restore preview transform right after capture
+      if (scaleWrapper) {
+        scaleWrapper.style.transform = originalTransform;
+      }
+
       const dataUrl = canvas.toDataURL('image/png');
       setGeneratedImageUrl(dataUrl);
 
     } catch (e) {
-      console.error('Certificate Generation Failed:', e);
+      console.error('Certificate generation failed:', e);
+      if (scaleWrapper) {
+        scaleWrapper.style.transform = originalTransform;
+      }
       alert('نعتذر، حدث خطأ أثناء تحضير الشهادة. يرجى أخذ لقطة شاشة بدلاً من ذلك.');
     } finally {
       setIsGenerating(false);
@@ -53,6 +73,7 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
       <div className="max-w-sm w-full relative mb-6 rounded-sm overflow-hidden flex flex-col items-center justify-center">
 
         {generatedImageUrl ? (
+          // Show generated certificate image — user long-presses to save on mobile
           <div className="relative w-full flex flex-col items-center animate-in zoom-in-95 duration-300">
             <img
               src={generatedImageUrl}
@@ -65,18 +86,24 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
             </div>
           </div>
         ) : (
+          // Show HTML preview
           <div className="shadow-2xl rounded-2xl overflow-hidden transform scale-95 sm:scale-100 w-full">
-            <div ref={printRef} className="bg-[#020617] text-white p-0 relative overflow-hidden aspect-[4/5] flex flex-col">
-
-              {/* FIX: replaced blur-[80px] (filter: blur) with radial gradients — html2canvas can't render CSS filters on mobile */}
+            <div
+              ref={printRef}
+              className="bg-[#020617] text-white p-0 relative overflow-hidden aspect-[4/5] flex flex-col"
+            >
+              {/* Solid background layers — no blur filters inside printRef */}
               <div className="absolute inset-0 bg-slate-950"></div>
               <div className="absolute inset-0 bg-gradient-to-b from-emerald-900/20 to-transparent"></div>
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12)_0%,transparent_70%)] -translate-y-1/2 translate-x-1/2"></div>
-              <div className="absolute bottom-0 left-0 w-64 h-64 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.06)_0%,transparent_70%)] translate-y-1/2 -translate-x-1/2"></div>
 
-              {/* FIX: removed backdrop-blur-sm — replaced with opaque bg for html2canvas compatibility */}
+              {/* Radial glows replacing blur-[80px] — html2canvas safe */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.12)_0%,transparent_70%)] -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.07)_0%,transparent_70%)] translate-y-1/2 -translate-x-1/2"></div>
+
+              {/* Inner card — backdrop-blur-sm removed, replaced with opaque bg */}
               <div className="relative z-10 h-full flex flex-col items-center justify-between p-12 text-center m-4 border border-white/5 rounded-[2rem] bg-slate-900/60">
 
+                {/* Header */}
                 <div className="flex flex-col items-center gap-6 mt-4">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-900/20 rotate-3">
                     <CheckCircle2 size={40} className="text-white" />
@@ -89,10 +116,11 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
                   </div>
                 </div>
 
+                {/* Body */}
                 <div className="flex-1 flex flex-col items-center justify-center gap-8 w-full">
                   <div className="w-full space-y-4">
                     <p className="text-slate-400 font-serif italic text-sm opacity-80">Presented to</p>
-                    {/* FIX: replaced bg-clip-text text-transparent gradient with solid color — gradient text renders invisible in html2canvas on mobile */}
+                    {/* bg-clip-text gradient replaced with solid color — gradient text is invisible in html2canvas on mobile */}
                     <h2 className="text-4xl font-bold text-emerald-300 font-quran py-2">
                       {username || 'Guest User'}
                     </h2>
@@ -110,6 +138,7 @@ export const CompletionModal: React.FC<CompletionModalProps> = ({ onClose, usern
                   </div>
                 </div>
 
+                {/* Footer */}
                 <div className="w-full flex justify-between items-end border-t border-white/10 pt-6">
                   <div className="text-left">
                     <p className="text-[9px] text-slate-500 uppercase tracking-widest mb-1 font-bold">Date</p>
