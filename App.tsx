@@ -23,17 +23,6 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AppTab>(AppTab.HOME);
   const [loading, setLoading] = useState(true);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
-
-  // Reset scroll on tab change
-  useEffect(() => {
-    // Reset window scroll (for mobile/body scrolling)
-    window.scrollTo({ top: 0, behavior: 'instant' });
-    
-    // Reset container scroll (for desktop/constrained scrolling)
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
-    }
-  }, [activeTab]);
   
   // Location & Method State
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
@@ -495,7 +484,15 @@ const App: React.FC = () => {
           )}
           
           {/* Framer Motion Wrap */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence 
+            mode="wait"
+            onExitComplete={() => {
+              window.scrollTo({ top: 0, behavior: 'instant' });
+              if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = 0;
+              }
+            }}
+          >
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 15 }}
@@ -514,7 +511,7 @@ const App: React.FC = () => {
                    <span>Made for the Ummah</span>
                    <Heart size={10} className="fill-white text-white" />
                 </div>
-                <p className="text-[9px] text-slate-500 font-mono text-center">Noor App v1.4.0-beta</p>
+                <p className="text-[9px] text-slate-500 font-mono text-center">Noor App v1.5.2 beta</p>
             </div>
           </div>
         </div>
