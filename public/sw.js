@@ -7,6 +7,5 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Simple pass-through for now
-  event.respondWith(fetch(event.request));
+  // Optional: Add caching logic here in the future
 });

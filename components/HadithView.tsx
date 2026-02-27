@@ -1,15 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { DUAS_LIBRARY } from '../data/staticContent';
+import { DUAS_LIBRARY, FRIDAY_HADITHS, FRIDAY_DUAS } from '../data/staticContent';
 import { hadithApi } from '../services/hadithApi';
-import { Scroll, Quote, Share2, Copy, Sparkles, Loader2, Book, ChevronRight, ChevronLeft, Star } from 'lucide-react';
+import { Scroll, Quote, Share2, Copy, Sparkles, Loader2, Book, ChevronRight, ChevronLeft, Star, Heart, BookOpen } from 'lucide-react';
 import { Hadith, Dua } from '../types';
 import { ShareModal } from './ShareModal';
 
-type ViewMode = 'HADITH' | 'DUA';
+type ViewMode = 'HADITH' | 'DUA' | 'JUMAH';
 
-export const HadithView: React.FC = () => {
-  const [mode, setMode] = useState<ViewMode>('HADITH');
+interface HadithViewProps {
+  onOpenKahf: () => void;
+}
+
+export const HadithView: React.FC<HadithViewProps> = ({ onOpenKahf }) => {
+  const isFriday = new Date().getDay() === 5;
+  const [mode, setMode] = useState<ViewMode>(isFriday ? 'JUMAH' : 'HADITH');
   const [shareItem, setShareItem] = useState<Hadith | Dua | null>(null);
   
   // Hadith State
@@ -47,17 +52,26 @@ export const HadithView: React.FC = () => {
       <ShareModal item={shareItem} onClose={() => setShareItem(null)} />
 
       {/* Minimal Tabs */}
-      <div className="flex bg-black/20 p-1 rounded-2xl mb-4 backdrop-blur-sm sticky top-0 z-10 border border-white/5 shadow-lg">
+      <div className="flex bg-black/20 p-1 rounded-2xl mb-4 backdrop-blur-sm sticky top-0 z-10 border border-white/5 shadow-lg overflow-x-auto">
+        {isFriday && (
+            <button 
+               onClick={() => setMode('JUMAH')}
+               className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 min-w-[100px] ${mode === 'JUMAH' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+            >
+               <Heart size={16} className={mode === 'JUMAH' ? 'fill-white' : ''} />
+               الجمعة
+            </button>
+        )}
         <button 
            onClick={() => setMode('HADITH')}
-           className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${mode === 'HADITH' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+           className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 min-w-[120px] ${mode === 'HADITH' ? 'bg-white/10 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
         >
            <Scroll size={16} />
            صحيح البخاري
         </button>
         <button 
            onClick={() => setMode('DUA')}
-           className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${mode === 'DUA' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
+           className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 min-w-[100px] ${mode === 'DUA' ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
         >
            <Sparkles size={16} />
            حصن المسلم
@@ -85,7 +99,52 @@ export const HadithView: React.FC = () => {
 
       {/* Content Grid */}
       <div className="space-y-5">
-        {mode === 'HADITH' ? (
+        {mode === 'JUMAH' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                {/* Kahf CTA */}
+                <div className="bg-gradient-to-br from-emerald-900 to-emerald-800 rounded-3xl p-6 text-white shadow-xl border border-emerald-500/30 relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                    <div className="relative z-10 flex flex-col items-center text-center">
+                        <Sparkles className="text-emerald-300 mb-3 animate-pulse" size={32} />
+                        <h2 className="text-2xl font-bold font-quran mb-2">سورة الكهف</h2>
+                        <p className="text-emerald-100/80 text-sm mb-6 max-w-xs">
+                            "من قرأ سورة الكهف في يوم الجمعة أضاء له من النور ما بين الجمعتين"
+                        </p>
+                        <button 
+                            onClick={onOpenKahf}
+                            className="px-8 py-3 bg-white text-emerald-900 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-50 transition-all shadow-lg active:scale-95"
+                        >
+                            <BookOpen size={20} />
+                            قراءة الآن
+                        </button>
+                    </div>
+                </div>
+
+                {/* Friday Hadiths */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2 px-2">
+                        <Scroll size={20} className="text-emerald-500" />
+                        أحاديث الجمعة
+                    </h3>
+                    {FRIDAY_HADITHS.map(hadith => (
+                        <HadithCard key={hadith.id} hadith={hadith} onShare={() => setShareItem(hadith)} />
+                    ))}
+                </div>
+
+                {/* Friday Duas */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-white flex items-center gap-2 px-2">
+                        <Heart size={20} className="text-emerald-500" />
+                        أدعية الجمعة
+                    </h3>
+                    {FRIDAY_DUAS.map(dua => (
+                        <DuaCard key={dua.id} dua={dua} onShare={() => setShareItem(dua)} />
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {mode === 'HADITH' && (
           <>
             {loadingHadiths && hadiths.length === 0 ? (
               <div className="flex justify-center py-20">
@@ -118,7 +177,9 @@ export const HadithView: React.FC = () => {
               </div>
             )}
           </>
-        ) : (
+        )}
+        
+        {mode === 'DUA' && (
           getDisplayedDuas().map((item) => (
             <DuaCard key={item.id} dua={item} onShare={() => setShareItem(item)} />
           ))

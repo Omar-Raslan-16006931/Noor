@@ -5,17 +5,17 @@ const HADITH_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours
 export const notificationService = {
   // 1. Request Permission
   requestPermission: async (): Promise<boolean> => {
-    if (!('Notification' in window)) {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
       console.log('This browser does not support desktop notification');
       return false;
     }
 
-    if (Notification.permission === 'granted') {
+    if (window.Notification.permission === 'granted') {
       return true;
     }
 
-    if (Notification.permission !== 'denied') {
-      const permission = await Notification.requestPermission();
+    if (window.Notification.permission !== 'denied') {
+      const permission = await window.Notification.requestPermission();
       return permission === 'granted';
     }
 
@@ -24,7 +24,8 @@ export const notificationService = {
 
   // 2. Check Notifications (Call this periodically)
   checkNotifications: (prayerData: PrayerData | null) => {
-    if (Notification.permission !== 'granted') return;
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
+    if (window.Notification.permission !== 'granted') return;
     checkPrayerTimes(prayerData);
     checkHadithTime();
   },
@@ -88,12 +89,14 @@ const checkPrayerTimes = (prayerData: PrayerData | null) => {
       
       // If we haven't notified for this prayer in the last 60 seconds
       if (Date.now() - lastTime > 60000) {
-        new Notification(`حان الآن موعد صلاة ${arabicNames[prayer]}`, {
-          body: `حان الآن موعد صلاة ${arabicNames[prayer]} حسب التوقيت المحلي.`,
-          icon: '/icon.png',
-          dir: 'rtl',
-          lang: 'ar'
-        });
+        if ('Notification' in window) {
+          new window.Notification(`حان الآن موعد صلاة ${arabicNames[prayer]}`, {
+            body: `حان الآن موعد صلاة ${arabicNames[prayer]} حسب التوقيت المحلي.`,
+            icon: '/icon.png',
+            dir: 'rtl',
+            lang: 'ar'
+          });
+        }
         localStorage.setItem('last_prayer_notification', Date.now().toString());
       }
     }
@@ -126,11 +129,13 @@ const triggerHadithNotification = () => {
   ];
   const randomHadith = hadiths[Math.floor(Math.random() * hadiths.length)];
 
-  new Notification("حديث نبوي شريف", {
-    body: randomHadith,
-    icon: '/icon.png',
-    dir: 'rtl',
-    lang: 'ar'
-  });
+  if ('Notification' in window) {
+    new window.Notification("حديث نبوي شريف", {
+      body: randomHadith,
+      icon: '/icon.png',
+      dir: 'rtl',
+      lang: 'ar'
+    });
+  }
 };
 

@@ -260,6 +260,47 @@ export const JUZ_START_PAGES = [
   { id: 28, startPage: 542 }, { id: 29, startPage: 562 }, { id: 30, startPage: 582 }
 ];
 
+export const FRIDAY_HADITHS: Hadith[] = [
+  {
+    id: 'f1',
+    text: "مَنْ غَسَّلَ يَوْمَ الْجُمُعَةِ وَاغْتَسَلَ، وَبَكَّرَ وَابْتَكَرَ، وَمَشَى وَلَمْ يَرْكَبْ، وَدَنَا مِنَ الإِمَامِ فَاسْتَمَعَ وَلَمْ يَلْغُ، كَانَ لَهُ بِكُلِّ خُطْوَةٍ عَمَلُ سَنَةٍ أَجْرُ صِيَامِهَا وَقِيَامِهَا",
+    source: "سنن أبي داود",
+    narrator: "أوس بن أوس",
+    english: "Whoever performs Ghusl on Friday, goes early to the mosque, walks and does not ride, sits close to the Imam, listens and does not speak, for every step he takes he will have the reward of a year of fasting and praying."
+  },
+  {
+    id: 'f2',
+    text: "خَيْرُ يَوْمٍ طَلَعَتْ عَلَيْهِ الشَّمْسُ يَوْمُ الْجُمُعَةِ، فِيهِ خُلِقَ آدَمُ، وَفِيهِ أُدْخِلَ الْجَنَّةَ، وَفِيهِ أُخْرِجَ مِنْهَا",
+    source: "صحيح مسلم",
+    narrator: "أبي هريرة",
+    english: "The best day on which the sun has risen is Friday; on it Adam was created, on it he was made to enter Paradise, on it he was expelled from it."
+  },
+  {
+    id: 'f3',
+    text: "أَكْثِرُوا عَلَيَّ مِنَ الصَّلاَةِ فِي كُلِّ يَوْمِ جُمُعَةٍ؛ فَإِنَّ صَلاَةَ أُمَّتِي تُعْرَضُ عَلَيَّ فِي كُلِّ يَوْمِ جُمُعَةٍ",
+    source: "السنن الكبرى",
+    narrator: "أبي الدرداء",
+    english: "Increase your supplications for me on Friday, for your supplications are presented to me on Friday."
+  }
+];
+
+export const FRIDAY_DUAS: Dua[] = [
+    {
+        id: 'fd1',
+        category: 'الجمعة',
+        arabic: "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، إِنَّكَ حَمِيدٌ مَجِيدٌ",
+        source: "الصلاة الإبراهيمية",
+        reference: "متفق عليه"
+    },
+    {
+        id: 'fd2',
+        category: 'الجمعة',
+        arabic: "اللَّهُمَّ إِنِّي أَسْأَلُكَ بِأَنِّي أَشْهَدُ أَنَّكَ أَنْتَ اللَّهُ لاَ إِلَهَ إِلاَّ أَنْتَ الأَحَدُ الصَّمَدُ الَّذِي لَمْ يَلِدْ وَلَمْ يُولَدْ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ",
+        source: "دعاء",
+        reference: "سنن الترمذي"
+    }
+];
+
 // Helpers
 export const getSurahInfoByPage = (page: number): Surah | null => {
   if (page < 1 || page > 604) return null;

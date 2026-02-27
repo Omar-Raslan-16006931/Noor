@@ -129,6 +129,33 @@ export interface Surah {
   startPage: number;
 }
 
+export interface Post {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  likes_count: number;
+  comments_count: number;
+  user?: {
+    username: string;
+    avatar_url?: string;
+  };
+  is_liked?: boolean; // For UI state
+}
+
+export interface Comment {
+  id: string;
+  user_id: string;
+  post_id: string;
+  content: string;
+  created_at: string;
+  parent_id?: string;
+  user?: {
+    username: string;
+    avatar_url?: string;
+  };
+}
+
 export enum AppTab {
   HOME = 'HOME',
   QURAN = 'QURAN',
@@ -137,5 +164,7 @@ export enum AppTab {
   QIBLA = 'QIBLA',
   TASBIH = 'TASBIH',
   SETTINGS = 'SETTINGS',
-  BRANDING = 'BRANDING'
+  BRANDING = 'BRANDING',
+  ZAKAT = 'ZAKAT',
+  COMMUNITY = 'COMMUNITY'
 }

@@ -5,6 +5,7 @@ import { RAMADAN_DUAS, TRUSTED_HADITHS } from '../data/staticContent';
 import { hadithApi } from '../services/hadithApi';
 import { storageService } from '../services/storage';
 import { ShareModal } from './ShareModal';
+import { JumahCard } from './JumahCard';
 
 interface PrayerTimesProps {
   data: PrayerData | null;
@@ -16,6 +17,7 @@ interface PrayerTimesProps {
   onOpenJournal: () => void;
   onOpenHadith: () => void;
   onOpenTasbih: () => void;
+  onOpenKahf: () => void;
 }
 
 // Pseudo-random generator seeded by date string
@@ -29,7 +31,7 @@ const getSeededRandomIndex = (seed: string, length: number) => {
 };
 
 export const PrayerTimesView: React.FC<PrayerTimesProps> = ({ 
-    data, locationName, isPrecise, onEnableLocation, onOpenQuran, onOpenQibla, onOpenJournal, onOpenHadith, onOpenTasbih 
+    data, locationName, isPrecise, onEnableLocation, onOpenQuran, onOpenQibla, onOpenJournal, onOpenHadith, onOpenTasbih, onOpenKahf 
 }) => {
   const [nextPrayer, setNextPrayer] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -39,6 +41,8 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
   const [featuredDua, setFeaturedDua] = useState(RAMADAN_DUAS[0]);
   const [quranProgress, setQuranProgress] = useState<QuranProgress>(storageService.getDefaultProgress());
   const [shareItem, setShareItem] = useState<any | null>(null);
+  
+  const isFriday = new Date().getDay() === 5;
 
   useEffect(() => {
     const loadContent = async () => {
@@ -237,6 +241,9 @@ export const PrayerTimesView: React.FC<PrayerTimesProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Jumah Card */}
+      {isFriday && <JumahCard onOpenKahf={onOpenKahf} />}
 
       {/* Enhanced Quran Tracker Widget - Compact & Clickable - MOVED HERE */}
       <div 

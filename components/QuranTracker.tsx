@@ -9,9 +9,18 @@ import { CompletionModal } from './CompletionModal';
 import { ShareModal } from './ShareModal';
 import { DUAS_LIBRARY, getSurahInfoByPage, getJuzInfoByPage } from '../data/staticContent';
 
-export const QuranTracker: React.FC = () => {
+interface QuranTrackerProps {
+  autoOpen?: number; // Timestamp to trigger open
+}
+
+export const QuranTracker: React.FC<QuranTrackerProps> = ({ autoOpen }) => {
   const [progress, setProgress] = useState<QuranProgress>(storageService.getDefaultProgress());
   const [isReading, setIsReading] = useState(false);
+  
+  // Auto-open effect
+  useEffect(() => {
+    if (autoOpen) setIsReading(true);
+  }, [autoOpen]);
   const [dailyDua, setDailyDua] = useState(DUAS_LIBRARY[0]);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [username, setUsername] = useState<string>('');

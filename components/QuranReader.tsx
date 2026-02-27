@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Loader2, ChevronLeft, ChevronRight, X, Maximize2, Minimize2, 
-  BookOpen, Volume2, Play, Pause, Image as ImageIcon, AlertCircle, 
+import {
+  Loader2, ChevronLeft, ChevronRight, X, Maximize2, Minimize2,
+  BookOpen, Volume2, Play, Pause, Image as ImageIcon, AlertCircle,
   Layers, Share2, Book, List, Search, Settings2, StopCircle, Check,
   Sun, Moon, CheckSquare, Share
 } from 'lucide-react';
@@ -9,11 +9,13 @@ import { supabase } from '../lib/supabaseClient';
 import { SURAH_NAMES, JUZ_START_PAGES, getSurahInfoByPage, getJuzInfoByPage } from '../data/staticContent';
 import { ShareModal } from './ShareModal';
 
+
 interface QuranReaderProps {
   page: number;
   onPageChange: (page: number, surah?: number, ayah?: number) => void;
   onClose: () => void;
 }
+
 
 interface AyahData {
   number: number;
@@ -28,23 +30,25 @@ interface AyahData {
   }
 }
 
+
 export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [mode, setMode] = useState<'MUSHAF' | 'RECITATION'>('MUSHAF');
   const [ayahs, setAyahs] = useState<AyahData[]>([]);
-  
+ 
   // Audio State
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [isPlayingPage, setIsPlayingPage] = useState(false);
   const [currentAyahIndex, setCurrentAyahIndex] = useState<number>(-1);
+
 
   const [showControls, setShowControls] = useState(true);
   const [showIndex, setShowIndex] = useState(false);
   const [indexTab, setIndexTab] = useState<'SURAHS' | 'JUZ'>('SURAHS');
   const [searchQuery, setSearchQuery] = useState('');
   const [direction, setDirection] = useState<'next' | 'prev'>('next');
-  
+ 
   // Visual State
   const [isNightMode, setIsNightMode] = useState(() => {
     try {
@@ -52,25 +56,29 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     } catch { return false; }
   });
 
+
   // Selection & Sharing
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedAyahIndices, setSelectedAyahIndices] = useState<Set<number>>(new Set());
   const [shareItem, setShareItem] = useState<any | null>(null);
 
+
   useEffect(() => {
     localStorage.setItem('quran_night_mode', isNightMode.toString());
   }, [isNightMode]);
-  
+ 
   // Swipe State (Using refs to avoid re-renders)
   const touchStart = useRef<number | null>(null);
   const touchEnd = useRef<number | null>(null);
-  
+ 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 
   // Determine current Surah/Juz based on page
   const currentSurahStatic = getSurahInfoByPage(page);
   const currentJuz = getJuzInfoByPage(page);
+
 
   // Auto-hide controls logic
   useEffect(() => {
@@ -80,11 +88,13 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     };
   }, [showControls, page, mode, isSelectionMode]); // Keep controls up if selecting
 
+
   const resetControlsTimeout = () => {
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-    
+   
     // Disable auto-hide in selection mode
     if (isSelectionMode) return;
+
 
     if (showControls) {
       controlsTimeoutRef.current = setTimeout(() => {
@@ -96,11 +106,13 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   };
 
+
   const toggleControls = () => {
     if (isSelectionMode) return; // Keep controls visible during selection
     setShowControls(prev => !prev);
     resetControlsTimeout();
   };
+
 
   // Load Recitation Data
   useEffect(() => {
@@ -108,7 +120,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     stopAudio();
     setIsSelectionMode(false);
     setSelectedAyahIndices(new Set());
-    
+   
     if (page > 0) {
         fetchPageData();
     } else {
@@ -117,11 +129,13 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   }, [page]);
 
+
   // Reset loading state when page changes
   useEffect(() => {
     setLoading(true);
     setError(false);
   }, [page]);
+
 
   const fetchPageData = async () => {
     // Don't fetch for cover page (0)
@@ -130,6 +144,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
         return;
     }
 
+
     setLoading(true);
     try {
       // Parallel fetch for speed
@@ -137,9 +152,10 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
          fetch(`https://api.alquran.cloud/v1/page/${page}/ar.alafasy`),
          fetch(`https://api.alquran.cloud/v1/page/${page}/quran-uthmani`)
       ]);
-      
+     
       const audioJson = await audioRes.json();
       const textJson = await textRes.json();
+
 
       if (audioJson.code === 200 && textJson.code === 200) {
         const mergedData = textJson.data.ayahs.map((textAyah: any, index: number) => ({
@@ -156,6 +172,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   };
 
+
   const stopAudio = () => {
     if (audioRef.current) {
         audioRef.current.pause();
@@ -166,6 +183,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     setCurrentAyahIndex(-1);
   };
 
+
   const handleNext = () => {
     if (page < 604) {
       setDirection('next');
@@ -174,6 +192,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
       onPageChange(page + 1, nextSurah?.number);
     }
   };
+
 
   const handlePrev = () => {
     if (page > 0) {
@@ -184,6 +203,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   };
 
+
   // Selection Logic
   const handleAyahClick = (ayah: AyahData, index: number) => {
       if (isSelectionMode) {
@@ -193,7 +213,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           } else {
               // Calculate max allowed (50% of total, min 1)
               const maxSelection = Math.max(1, Math.ceil(ayahs.length * 0.5));
-              
+             
               if (newSet.size >= maxSelection) {
                   alert(`يمكنك اختيار ${maxSelection} آيات كحد أقصى (50% من الصفحة) للمشاركة.`);
                   return;
@@ -205,6 +225,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           playAyah(ayah.audio, index);
       }
   };
+
 
   const toggleSelectionMode = () => {
       if (isSelectionMode) {
@@ -218,28 +239,31 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
       }
   };
 
+
   const handleShareSelected = () => {
       if (selectedAyahIndices.size === 0) return;
+
 
       // Sort indices to maintain order
       const indices = Array.from(selectedAyahIndices).sort((a: number, b: number) => a - b);
       const selectedAyahs = indices.map(i => ayahs[i]);
-      
+     
       // Construct combined text
       const combinedText = selectedAyahs.map(a => `${a.text} ﴿${a.numberInSurah}﴾`).join(' ');
-      
+     
       // Construct Source (Surah Name + Ayah Range)
       const surahName = selectedAyahs[0].surah.name;
       const startNum = selectedAyahs[0].numberInSurah;
       const endNum = selectedAyahs[selectedAyahs.length - 1].numberInSurah;
       const range = startNum === endNum ? `${startNum}` : `${startNum}-${endNum}`;
-      
+     
       setShareItem({
           arabic: combinedText,
           source: `${surahName}: ${range}`,
           category: 'القرآن الكريم'
       });
   };
+
 
   // Swipe Handlers
   const minSwipeDistance = 50;
@@ -258,14 +282,15 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     const start = touchStart.current;
     const end = touchEnd.current;
 
+
     // Ensure start and end are numbers
     if (start === null || end === null) return;
-    
+   
     // Calculate distance
     const distance = start - end;
     const isLeftSwipe = distance > minSwipeDistance; // Dragged Finger Left (Move viewport right)
     const isRightSwipe = distance < -minSwipeDistance; // Dragged Finger Right (Move viewport left)
-    
+   
     // Reverse Logic for RTL Book Feeling
     // If I swipe my finger to the RIGHT (dragging current page to right), I should see the NEXT page (which comes from left).
     if (isRightSwipe && page < 604) {
@@ -277,6 +302,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   };
 
+
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPage = parseInt(e.target.value);
     setDirection(newPage > page ? 'next' : 'prev');
@@ -285,9 +311,11 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     onPageChange(newPage, newSurah?.number);
   };
 
+
   const playAyah = (url: string, index: number) => {
     // If clicking a specific ayah, stop page mode
     setIsPlayingPage(false);
+
 
     if (audioRef.current) {
       if (playingAudio === url) {
@@ -303,8 +331,10 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   };
 
+
   const togglePlayPage = () => {
     if (ayahs.length === 0) return;
+
 
     if (isPlayingPage) {
         // Pause
@@ -318,14 +348,16 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   };
 
+
   const playAyahAtIndex = (index: number) => {
     if (index >= ayahs.length) {
         // Page finished
         stopAudio();
         // Optional: Auto-advance to next page?
-        // handleNext(); 
+        // handleNext();
         return;
     }
+
 
     const ayah = ayahs[index];
     if (audioRef.current) {
@@ -336,6 +368,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     }
   };
 
+
   const handleAudioEnded = () => {
       if (isPlayingPage) {
           playAyahAtIndex(currentAyahIndex + 1);
@@ -345,6 +378,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
       }
   };
 
+
   const handleJumpToPage = (targetPage: number) => {
     stopAudio();
     setDirection(targetPage > page ? 'next' : 'prev');
@@ -353,22 +387,27 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
     setShowIndex(false);
   };
 
-  const filteredSurahs = SURAH_NAMES.filter(s => 
-     s.name.includes(searchQuery) || 
-     s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+
+  const filteredSurahs = SURAH_NAMES.filter(s =>
+     s.name.includes(searchQuery) ||
+     s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
      s.number.toString().includes(searchQuery)
   );
+
 
   const paddedPage = page.toString().padStart(3, '0');
   const { data: { publicUrl: imageUrl } } = supabase.storage
     .from('quran-pages')
     .getPublicUrl(`quran-pages/${paddedPage}.png`);
 
+
   const currentSurah = ayahs.length > 0 ? ayahs[0].surah : (currentSurahStatic || { name: 'القرآن الكريم', englishName: 'The Holy Quran', revelationType: '' });
   const isCover = page === 0;
 
+
   // Determine page side for shadow logic (Odd = Right Page, Even = Left Page in Madani Mushaf usually)
   const isOddPage = page % 2 !== 0;
+
 
   return (
     <div className={`fixed inset-0 z-[100] flex flex-col font-sans select-none overflow-hidden transition-colors duration-500 ${isNightMode ? 'bg-slate-950 text-slate-200' : 'bg-[#F4F1EA] text-slate-900 paper-texture'}`}>
@@ -399,15 +438,17 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
          }
        `}</style>
 
+
        <audio ref={audioRef} onEnded={handleAudioEnded} className="hidden" />
        
        <ShareModal item={shareItem} onClose={() => setShareItem(null)} />
+
 
        {/* --- INDEX OVERLAY (MODAL) --- */}
        {showIndex && (
          <div className="absolute inset-0 z-[200] flex flex-col animate-in fade-in slide-in-from-bottom-5 duration-300">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowIndex(false)}></div>
-            
+           
             <div className="relative m-4 flex flex-col max-h-[85vh] rounded-3xl overflow-hidden glass-panel-dark border border-white/10 shadow-2xl mt-auto mb-auto">
                {/* Index Header */}
                <div className="p-4 flex items-center justify-between border-b border-white/10 bg-white/5">
@@ -415,7 +456,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                      <List size={20} className="text-amber-500" />
                      فهرس المصحف
                   </h2>
-                  <button 
+                  <button
                      onClick={() => setShowIndex(false)}
                      className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors"
                   >
@@ -423,28 +464,29 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                   </button>
                </div>
 
+
                {/* Tabs & Search */}
                <div className="p-4 space-y-4 bg-black/20">
                   <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5">
-                     <button 
+                     <button
                         onClick={() => setIndexTab('SURAHS')}
                         className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${indexTab === 'SURAHS' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                      >
                         السور
                      </button>
-                     <button 
+                     <button
                         onClick={() => setIndexTab('JUZ')}
                         className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${indexTab === 'JUZ' ? 'bg-amber-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                      >
                         الأجزاء
                      </button>
                   </div>
-                  
+                 
                   {indexTab === 'SURAHS' && (
                      <div className="relative">
                         <Search className="absolute right-3 top-3 text-slate-500" size={16} />
-                        <input 
-                           type="text" 
+                        <input
+                           type="text"
                            placeholder="ابحث عن سورة..."
                            value={searchQuery}
                            onChange={(e) => setSearchQuery(e.target.value)}
@@ -453,6 +495,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                      </div>
                   )}
                </div>
+
 
                {/* List Content */}
                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 pt-0 bg-black/20">
@@ -463,8 +506,8 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                               key={surah.number}
                               onClick={() => handleJumpToPage(surah.startPage)}
                               className={`p-3 rounded-xl flex items-center justify-between transition-all group border ${
-                                 currentSurahStatic?.number === surah.number 
-                                   ? 'bg-amber-900/20 border-amber-500/30' 
+                                 currentSurahStatic?.number === surah.number
+                                   ? 'bg-amber-900/20 border-amber-500/30'
                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
                               }`}
                            >
@@ -491,7 +534,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                               onClick={() => handleJumpToPage(juz.startPage)}
                               className={`p-3 rounded-xl flex flex-col items-center justify-center gap-2 transition-all group border ${
                                  currentJuz === juz.id
-                                   ? 'bg-amber-900/20 border-amber-500/30' 
+                                   ? 'bg-amber-900/20 border-amber-500/30'
                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
                               }`}
                            >
@@ -513,8 +556,9 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
          </div>
        )}
 
+
        {/* --- MAIN CONTENT LAYER --- */}
-       <div 
+       <div
          className="absolute inset-0 z-0 flex items-center justify-center"
          onClick={toggleControls}
          onTouchStart={onTouchStart}
@@ -525,7 +569,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
              <div className="relative w-full h-full flex items-center justify-center p-0 transition-transform duration-500 ease-out">
                 {/* Book Background Vignette - Reduced for cleaner look */}
                 <div className={`absolute inset-0 pointer-events-none transition-colors duration-500 ${isNightMode ? 'bg-black/80' : 'bg-[#e3dcd3]'}`}></div>
-                
+               
                 {loading && !error && (
                    <div className="absolute inset-0 flex items-center justify-center z-20">
                       <div className="relative">
@@ -535,12 +579,13 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                    </div>
                 )}
 
+
                 {error && (
                    <div className="flex flex-col items-center justify-center text-center p-8 bg-white rounded-3xl max-w-sm mx-4 shadow-xl border border-stone-200 z-20">
                       <AlertCircle className="text-red-500 mb-4" size={48} />
                       <h3 className="text-xl font-bold text-stone-800 mb-2">تعذر تحميل الصفحة</h3>
                       <p className="text-stone-500 text-sm mb-6 dir-ltr opacity-70 font-mono text-[10px]">{imageUrl}</p>
-                      <button 
+                      <button
                          onClick={(e) => { e.stopPropagation(); setError(false); setLoading(true); }}
                          className="px-6 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-500 transition-colors shadow-lg"
                       >
@@ -549,8 +594,9 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                    </div>
                 )}
 
+
                 {/* Main Page Image Container - Styled to look like a book page */}
-                <div 
+                <div
                    key={page}
                    className={`
                       relative flex items-center justify-center overflow-hidden
@@ -570,8 +616,8 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                        borderBottomLeftRadius: !isOddPage ? '4px' : '0',
                        
                        // Page Shadows (Spine vs Edge)
-                       boxShadow: isNightMode ? 'none' : 
-                         isOddPage 
+                       boxShadow: isNightMode ? 'none' :
+                         isOddPage
                            ? '10px 0 25px rgba(0,0,0,0.15), -1px 0 2px rgba(0,0,0,0.1)' // Right Page
                            : '-10px 0 25px rgba(0,0,0,0.15), 1px 0 2px rgba(0,0,0,0.1)' // Left Page
                    }}
@@ -579,29 +625,30 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                    {/* 1. Spine Shadow (Inner Gradient) */}
                    {!isNightMode && (
                        <div className={`absolute top-0 bottom-0 w-8 z-10 pointer-events-none mix-blend-multiply opacity-15
-                           ${isOddPage 
-                               ? 'left-0 bg-gradient-to-r from-slate-800 via-slate-600 to-transparent' 
+                           ${isOddPage
+                               ? 'left-0 bg-gradient-to-r from-slate-800 via-slate-600 to-transparent'
                                : 'right-0 bg-gradient-to-l from-slate-800 via-slate-600 to-transparent'
                            }
                        `}></div>
                    )}
 
-                   <img 
-                      src={imageUrl} 
+
+                   <img
+                      src={imageUrl}
                       alt={`Page ${page}`}
                       className={`
                          w-full h-full
                          ${loading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}
                          object-contain
-                         transition-all duration-500 
+                         transition-all duration-500
                          mix-blend-multiply
                       `}
                       onLoad={() => setLoading(false)}
                       onError={() => { setLoading(false); setError(true); }}
-                      style={{ 
+                      style={{
                          // Night mode filters
-                         filter: isNightMode 
-                           ? 'invert(1) hue-rotate(180deg) brightness(0.85) grayscale(20%)' 
+                         filter: isNightMode
+                           ? 'invert(1) hue-rotate(180deg) brightness(0.85) grayscale(20%)'
                            : 'sepia(8%) contrast(105%)',
                          mixBlendMode: isNightMode ? 'normal' : 'multiply'
                       }}
@@ -627,18 +674,19 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                    </div>
                 </div>
 
+
                 {/* Ayah List */}
                 <div className="space-y-4">
                    {ayahs.map((ayah, idx) => (
-                      <div 
-                         key={ayah.number} 
+                      <div
+                         key={ayah.number}
                          onClick={(e) => { e.stopPropagation(); handleAyahClick(ayah, idx); }}
                          className={`
                             relative rounded-2xl p-5 transition-all duration-300 group cursor-pointer border
                             ${isSelectionMode && selectedAyahIndices.has(idx)
                                ? 'bg-emerald-500/20 border-emerald-500/50 shadow-emerald-900/20'
-                               : playingAudio === ayah.audio 
-                                    ? (isNightMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-amber-50 border-amber-200 shadow-md') 
+                               : playingAudio === ayah.audio
+                                    ? (isNightMode ? 'bg-indigo-900/20 border-indigo-500/30' : 'bg-amber-50 border-amber-200 shadow-md')
                                     : (isNightMode ? 'bg-slate-900 border-white/5 hover:bg-slate-800' : 'bg-white/60 hover:shadow-sm border-transparent hover:bg-white/80')
                             }
                          `}
@@ -655,7 +703,7 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                                    </span>
                                )}
                                {!isSelectionMode && (
-                                   <button 
+                                   <button
                                       className={`
                                          w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm
                                          ${playingAudio === ayah.audio ? 'bg-amber-600 text-white shadow-amber-200' : (isNightMode ? 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-amber-400' : 'bg-white text-stone-400 border border-stone-200 hover:border-amber-400 hover:text-amber-600')}
@@ -688,18 +736,19 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           )}
        </div>
 
+
        {/* --- FLOATING CONTROLS --- */}
        
        {/* Top Bar - Horizontal & Compact */}
-       <div 
+       <div
          className={`absolute top-4 inset-x-4 z-50 transition-all duration-500 ${showControls && !showIndex ? 'translate-y-0 opacity-100' : '-translate-y-20 opacity-0 pointer-events-none'}`}
-         onClick={(e) => e.stopPropagation()} 
+         onClick={(e) => e.stopPropagation()}
        >
           <div className="max-w-2xl mx-auto flex flex-row items-center justify-between gap-3 bg-black/80 backdrop-blur-md p-2 rounded-full border border-white/10 shadow-xl">
              
              {/* Left: Close */}
-             <button 
-                onClick={onClose} 
+             <button
+                onClick={onClose}
                 className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
                 title="خروج"
              >
@@ -720,30 +769,31 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                  </div>
              </div>
 
+
              {/* Right: Tools */}
              <div className="flex items-center gap-1">
-                <button 
+                <button
                    onClick={() => setIsNightMode(!isNightMode)}
                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isNightMode ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
                    title={isNightMode ? 'الوضع النهاري' : 'الوضع الليلي'}
                 >
                    {isNightMode ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
-                <button 
+                <button
                    onClick={toggleSelectionMode}
                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${isSelectionMode ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
                    title="مشاركة آيات"
                 >
                    <Share size={18} />
                 </button>
-                <button 
+                <button
                    onClick={() => setMode(mode === 'MUSHAF' ? 'RECITATION' : 'MUSHAF')}
                    className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors ${mode === 'RECITATION' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
                    title={mode === 'MUSHAF' ? 'وضع التلاوة' : 'وضع المصحف'}
                 >
                    {mode === 'MUSHAF' ? <Volume2 size={18} /> : <ImageIcon size={18} />}
                 </button>
-                <button 
+                <button
                    onClick={() => setShowIndex(true)}
                    className="w-9 h-9 rounded-full hover:bg-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-colors"
                    title="الفهرس"
@@ -754,20 +804,21 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
           </div>
        </div>
 
+
        {/* Bottom Bar - Corrected RTL Logic */}
-       <div 
+       <div
           className={`absolute bottom-6 inset-x-4 z-50 transition-all duration-500 ${showControls && !showIndex ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0 pointer-events-none'}`}
-          onClick={(e) => e.stopPropagation()} 
+          onClick={(e) => e.stopPropagation()}
        >
           <div className="max-w-sm mx-auto">
             <div className="bg-black/80 backdrop-blur-md rounded-2xl p-3 shadow-2xl border border-white/5">
-                
+               
                 {/* Main Controls Row */}
                 {/* In RTL (dir="rtl"), the first element is on the RIGHT */}
                 <div className="flex items-center justify-between mb-3">
-                    
+                   
                     {/* Right Button (Previous Page -> Right Arrow) */}
-                    <button 
+                    <button
                         onClick={handlePrev}
                         disabled={page <= 0}
                         className="p-3 rounded-full text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
@@ -775,15 +826,16 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                         <ChevronRight size={24} />
                     </button>
 
+
                     {/* Play/Stop Page OR Share Button (Center) */}
                     {isSelectionMode ? (
-                        <button 
+                        <button
                             onClick={handleShareSelected}
                             disabled={selectedAyahIndices.size === 0}
                             className={`
                                 h-10 px-6 rounded-full flex items-center justify-center gap-2 font-bold text-xs transition-all shadow-lg active:scale-95
-                                ${selectedAyahIndices.size > 0 
-                                    ? 'bg-emerald-600 text-white shadow-emerald-500/20' 
+                                ${selectedAyahIndices.size > 0
+                                    ? 'bg-emerald-600 text-white shadow-emerald-500/20'
                                     : 'bg-slate-700 text-slate-400 cursor-not-allowed'}
                             `}
                         >
@@ -791,13 +843,13 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                             <span>مشاركة ({selectedAyahIndices.size})</span>
                         </button>
                     ) : (
-                        <button 
+                        <button
                             onClick={togglePlayPage}
                             disabled={ayahs.length === 0}
                             className={`
                                 h-10 px-6 rounded-full flex items-center justify-center gap-2 font-bold text-xs transition-all shadow-lg active:scale-95
-                                ${isPlayingPage 
-                                    ? 'bg-red-500 text-white shadow-red-500/20' 
+                                ${isPlayingPage
+                                    ? 'bg-red-500 text-white shadow-red-500/20'
                                     : 'bg-white text-slate-900 hover:bg-slate-200 shadow-white/10'}
                             `}
                         >
@@ -815,8 +867,9 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                         </button>
                     )}
 
+
                     {/* Left Button (Next Page -> Left Arrow) */}
-                    <button 
+                    <button
                         onClick={handleNext}
                         disabled={page >= 604}
                         className="p-3 rounded-full text-white hover:bg-white/10 disabled:opacity-30 transition-colors"
@@ -825,27 +878,29 @@ export const QuranReader: React.FC<QuranReaderProps> = ({ page, onPageChange, on
                     </button>
                 </div>
 
+
                 {/* Compact Slider */}
                 <div className="flex items-center gap-3 px-2">
                      <span className="text-[10px] text-slate-400 font-mono w-6 text-center">{page}</span>
                      <div className="relative flex-1 h-1 bg-white/20 rounded-full group cursor-pointer">
                          {/* Fill */}
-                         <div 
+                         <div
                             className="absolute left-0 h-full bg-amber-500 rounded-full"
                             style={{ width: `${(page / 604) * 100}%` }}
                          ></div>
                          {/* Touch Target */}
-                         <input 
-                            type="range" 
-                            min="0" 
-                            max="604" 
-                            value={page} 
+                         <input
+                            type="range"
+                            min="0"
+                            max="604"
+                            value={page}
                             onChange={handleSliderChange}
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                          />
                      </div>
                      <span className="text-[10px] text-slate-400 font-mono w-6 text-center">604</span>
                 </div>
+
 
             </div>
           </div>
