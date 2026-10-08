@@ -1,20 +1,27 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Noor — Islamic Assistant
 
-# Run and deploy your AI Studio app
+A daily companion app with prayer times, Qibla direction, Quran reading and tracking, and an AI assistant for Islamic questions.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/52de6c79-a265-4f6a-b338-86a95988b6fe
+- **Prayer times** based on your location, with notifications and a Jumu'ah card
+- **Qibla compass** using the device's location and orientation
+- **Quran reader and tracker** to log your daily reading progress
+- **Hadith browser**
+- **AI assistant** (Gemini) for Islamic guidance
+- **Tasbih counter**, **Zakat calculator** and a personal **journal**
+- **Community tab** for sharing
+- **Shareable images:** turn a verse or hadith into an image card to share
+- Installable as a PWA
 
-## Run Locally
+## Tech stack
 
-**Prerequisites:**  Node.js
+React, TypeScript, Vite, Framer Motion, Supabase (Auth + database), Google Gemini, html2canvas, deployed on Vercel
 
+## Getting started
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm install
+# create .env.local with your Supabase URL/anon key and GEMINI_API_KEY
+npm run dev
+```
